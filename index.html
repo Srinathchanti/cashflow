@@ -123,6 +123,9 @@ nav.bottom-nav { position:fixed; bottom:16px; left:50%; transform:translateX(-50
 .chat-bubble .cb-line + .cb-line { margin-top:6px; }
 .ask-header { margin-bottom:4px; }
 
+.auth-screen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:var(--surface-0); }
+.auth-card { width:100%; max-width:360px; border-radius:24px; padding:28px 24px; }
+
 main { max-width:640px; margin:0 auto; padding:16px 16px 112px; }
 .fade-in { animation:fadeIn .35s cubic-bezier(.22,.61,.36,1); }
 @keyframes fadeIn { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
@@ -237,6 +240,24 @@ textarea.input { min-height:60px; resize:none; }
 </head>
 <body>
 
+<div class="auth-screen" id="auth-screen" style="display:none">
+  <div class="auth-card glass-strong">
+    <div class="brand" style="justify-content:center;margin-bottom:22px">
+      <div class="brand-icon"><svg data-lucide="activity"></svg></div>
+      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Finance</div></div>
+    </div>
+    <div class="manage-tabs" style="margin-bottom:16px">
+      <button class="pill active" id="auth-tab-in" onclick="setAuthMode('signin')" style="flex:1;justify-content:center">Sign In</button>
+      <button class="pill" id="auth-tab-up" onclick="setAuthMode('signup')" style="flex:1;justify-content:center">Sign Up</button>
+    </div>
+    <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
+    <input class="input" id="auth-password" type="password" autocomplete="current-password" placeholder="Password" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitAuth();">
+    <p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
+    <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>
+    <button class="btn-primary" id="auth-submit" onclick="submitAuth()" style="width:100%">Sign In</button>
+  </div>
+</div>
+
 <header class="hdr-wrap">
   <div class="hdr-inner glass-strong">
     <div class="brand">
@@ -249,6 +270,7 @@ textarea.input { min-height:60px; resize:none; }
     <div class="hdr-actions">
       <button class="icon-btn" onclick="toggleSearch()"><svg data-lucide="search"></svg></button>
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()"><svg data-lucide="moon"></svg></button>
+      <button class="icon-btn" onclick="handleSignOut()" title="Sign out"><svg data-lucide="log-out"></svg></button>
       <button class="add-btn-desktop" onclick="openModal()"><svg data-lucide="plus" style="width:13px;height:13px"></svg> Add</button>
     </div>
   </div>
@@ -1530,8 +1552,55 @@ function toggleTheme() { THEME = THEME === "dark" ? "light" : "dark"; Store.set(
 /* ══════════════════════════════════════════════
    INIT
    ══════════════════════════════════════════════ */
-async function init() {
-  applyTheme();
+/* ══════════════════════════════════════════════
+   AUTH
+   ══════════════════════════════════════════════ */
+let authMode = "signin";
+function setAuthMode(mode) {
+  authMode = mode;
+  document.getElementById("auth-tab-in").classList.toggle("active", mode === "signin");
+  document.getElementById("auth-tab-up").classList.toggle("active", mode === "signup");
+  document.getElementById("auth-submit").textContent = mode === "signin" ? "Sign In" : "Create Account";
+  document.getElementById("auth-password").autocomplete = mode === "signin" ? "current-password" : "new-password";
+  hideAuthMsgs();
+}
+function hideAuthMsgs() {
+  document.getElementById("auth-error").style.display = "none";
+  document.getElementById("auth-info").style.display = "none";
+}
+function showAuthError(msg) { const el = document.getElementById("auth-error"); el.textContent = msg; el.style.display = "block"; document.getElementById("auth-info").style.display = "none"; }
+function showAuthInfo(msg) { const el = document.getElementById("auth-info"); el.textContent = msg; el.style.display = "block"; document.getElementById("auth-error").style.display = "none"; }
+
+async function submitAuth() {
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+  hideAuthMsgs();
+  if (!email || !password) { showAuthError("Enter both email and password."); return; }
+  const btn = document.getElementById("auth-submit");
+  const orig = btn.textContent; btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    if (authMode === "signin") {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data.session === null) { showAuthInfo("Account created — check your email to confirm before signing in."); }
+    }
+  } catch (err) {
+    showAuthError(err.message || "Something went wrong.");
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+async function handleSignOut() {
+  await sb.auth.signOut();
+}
+
+function showAuthScreen() { document.getElementById("auth-screen").style.display = "flex"; }
+function hideAuthScreen() { document.getElementById("auth-screen").style.display = "none"; }
+
+async function bootApp() {
   document.getElementById("main-content").innerHTML = `
     <div class="skeleton" style="height:120px;margin-bottom:20px"></div>
     <div class="skeleton" style="height:180px;margin-bottom:20px"></div>
@@ -1546,6 +1615,17 @@ async function init() {
   }
   renderMain();
   refreshIcons();
+}
+
+async function init() {
+  applyTheme();
+  refreshIcons();
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { hideAuthScreen(); await bootApp(); } else { showAuthScreen(); }
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN") { hideAuthScreen(); bootApp(); }
+    else if (event === "SIGNED_OUT") { showAuthScreen(); document.getElementById("main-content").innerHTML = ""; TXS=[]; BUDGETS=[]; GOALS=[]; BILLS=[]; RECURRING=[]; }
+  });
 }
 init();
 </script>
