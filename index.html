@@ -241,21 +241,7 @@ textarea.input { min-height:60px; resize:none; }
 <body>
 
 <div class="auth-screen" id="auth-screen" style="display:none">
-  <div class="auth-card glass-strong">
-    <div class="brand" style="justify-content:center;margin-bottom:22px">
-      <div class="brand-icon"><svg data-lucide="activity"></svg></div>
-      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Finance</div></div>
-    </div>
-    <div class="manage-tabs" style="margin-bottom:16px">
-      <button class="pill active" id="auth-tab-in" onclick="setAuthMode('signin')" style="flex:1;justify-content:center">Sign In</button>
-      <button class="pill" id="auth-tab-up" onclick="setAuthMode('signup')" style="flex:1;justify-content:center">Sign Up</button>
-    </div>
-    <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
-    <input class="input" id="auth-password" type="password" autocomplete="current-password" placeholder="Password" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitAuth();">
-    <p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
-    <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>
-    <button class="btn-primary" id="auth-submit" onclick="submitAuth()" style="width:100%">Sign In</button>
-  </div>
+  <div class="auth-card glass-strong" id="auth-card"></div>
 </div>
 
 <header class="hdr-wrap">
@@ -1555,21 +1541,55 @@ function toggleTheme() { THEME = THEME === "dark" ? "light" : "dark"; Store.set(
 /* ══════════════════════════════════════════════
    AUTH
    ══════════════════════════════════════════════ */
-let authMode = "signin";
-function setAuthMode(mode) {
-  authMode = mode;
-  document.getElementById("auth-tab-in").classList.toggle("active", mode === "signin");
-  document.getElementById("auth-tab-up").classList.toggle("active", mode === "signup");
-  document.getElementById("auth-submit").textContent = mode === "signin" ? "Sign In" : "Create Account";
-  document.getElementById("auth-password").autocomplete = mode === "signin" ? "current-password" : "new-password";
-  hideAuthMsgs();
+let authMode = "signin"; // signin | signup | forgot | reset
+
+function renderAuthScreen() {
+  const card = document.getElementById("auth-card");
+  const brand = `<div class="brand" style="justify-content:center;margin-bottom:22px">
+      <div class="brand-icon">${icon("activity")}</div>
+      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Finance</div></div>
+    </div>`;
+  const msgs = `<p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
+    <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>`;
+  const linkBtnStyle = "background:none;border:none;padding:0;font-size:.75rem;color:var(--text-3);text-decoration:underline;cursor:pointer";
+  let body;
+  if (authMode === "reset") {
+    body = `
+      <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">Choose a new password for your account.</p>
+      <input class="input" id="auth-password" type="password" autocomplete="new-password" placeholder="New password" style="margin-bottom:10px">
+      <input class="input" id="auth-password2" type="password" autocomplete="new-password" placeholder="Confirm new password" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitReset();">
+      ${msgs}
+      <button class="btn-primary" id="auth-submit" onclick="submitReset()" style="width:100%">Update Password</button>`;
+  } else if (authMode === "forgot") {
+    body = `
+      <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">Enter your email and we'll send a reset link.</p>
+      <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitForgot();">
+      ${msgs}
+      <button class="btn-primary" id="auth-submit" onclick="submitForgot()" style="width:100%">Send Reset Link</button>
+      <button style="${linkBtnStyle};display:block;margin:14px auto 0" onclick="setAuthMode('signin')">Back to sign in</button>`;
+  } else {
+    body = `
+      <div class="manage-tabs" style="margin-bottom:16px">
+        <button class="pill ${authMode==="signin"?"active":""}" onclick="setAuthMode('signin')" style="flex:1;justify-content:center">Sign In</button>
+        <button class="pill ${authMode==="signup"?"active":""}" onclick="setAuthMode('signup')" style="flex:1;justify-content:center">Sign Up</button>
+      </div>
+      <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
+      <input class="input" id="auth-password" type="password" autocomplete="${authMode==="signin"?"current-password":"new-password"}" placeholder="Password" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')submitAuth();">
+      <div style="text-align:right;margin-bottom:10px;min-height:14px">${authMode==="signin"?`<button style="${linkBtnStyle}" onclick="setAuthMode('forgot')">Forgot password?</button>`:""}</div>
+      ${msgs}
+      <button class="btn-primary" id="auth-submit" onclick="submitAuth()" style="width:100%">${authMode==="signin"?"Sign In":"Create Account"}</button>`;
+  }
+  card.innerHTML = brand + body;
+  refreshIcons();
 }
+function setAuthMode(mode) { authMode = mode; renderAuthScreen(); }
 function hideAuthMsgs() {
-  document.getElementById("auth-error").style.display = "none";
-  document.getElementById("auth-info").style.display = "none";
+  const e1 = document.getElementById("auth-error"), e2 = document.getElementById("auth-info");
+  if (e1) e1.style.display = "none";
+  if (e2) e2.style.display = "none";
 }
-function showAuthError(msg) { const el = document.getElementById("auth-error"); el.textContent = msg; el.style.display = "block"; document.getElementById("auth-info").style.display = "none"; }
-function showAuthInfo(msg) { const el = document.getElementById("auth-info"); el.textContent = msg; el.style.display = "block"; document.getElementById("auth-error").style.display = "none"; }
+function showAuthError(msg) { hideAuthMsgs(); const el = document.getElementById("auth-error"); el.textContent = msg; el.style.display = "block"; }
+function showAuthInfo(msg) { hideAuthMsgs(); const el = document.getElementById("auth-info"); el.textContent = msg; el.style.display = "block"; }
 
 async function submitAuth() {
   const email = document.getElementById("auth-email").value.trim();
@@ -1585,17 +1605,48 @@ async function submitAuth() {
     } else {
       const { data, error } = await sb.auth.signUp({ email, password });
       if (error) throw error;
-      if (data.session === null) { showAuthInfo("Account created — check your email to confirm before signing in."); }
+      if (data.session === null) { showAuthInfo("Account created — check your email to confirm before signing in."); btn.disabled = false; btn.textContent = orig; return; }
     }
+  } catch (err) {
+    showAuthError(err.message || "Something went wrong.");
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+async function submitForgot() {
+  const email = document.getElementById("auth-email").value.trim();
+  hideAuthMsgs();
+  if (!email) { showAuthError("Enter your email."); return; }
+  const btn = document.getElementById("auth-submit");
+  const orig = btn.textContent; btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
+    if (error) throw error;
+    showAuthInfo("Check your email for a password reset link.");
   } catch (err) {
     showAuthError(err.message || "Something went wrong.");
   } finally {
     btn.disabled = false; btn.textContent = orig;
   }
 }
-async function handleSignOut() {
-  await sb.auth.signOut();
+async function submitReset() {
+  const pw = document.getElementById("auth-password").value;
+  const pw2 = document.getElementById("auth-password2").value;
+  hideAuthMsgs();
+  if (!pw || pw.length < 6) { showAuthError("Password must be at least 6 characters."); return; }
+  if (pw !== pw2) { showAuthError("Passwords don't match."); return; }
+  const btn = document.getElementById("auth-submit");
+  const orig = btn.textContent; btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    showAuthInfo("Password updated — signing you in...");
+    setTimeout(() => { authMode = "signin"; hideAuthScreen(); bootApp(); }, 1000);
+  } catch (err) {
+    showAuthError(err.message || "Something went wrong.");
+    btn.disabled = false; btn.textContent = orig;
+  }
 }
+async function handleSignOut() { await sb.auth.signOut(); }
 
 function showAuthScreen() { document.getElementById("auth-screen").style.display = "flex"; }
 function hideAuthScreen() { document.getElementById("auth-screen").style.display = "none"; }
@@ -1620,11 +1671,21 @@ async function bootApp() {
 async function init() {
   applyTheme();
   refreshIcons();
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) { hideAuthScreen(); await bootApp(); } else { showAuthScreen(); }
+  renderAuthScreen();
   sb.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_IN") { hideAuthScreen(); bootApp(); }
-    else if (event === "SIGNED_OUT") { showAuthScreen(); document.getElementById("main-content").innerHTML = ""; TXS=[]; BUDGETS=[]; GOALS=[]; BILLS=[]; RECURRING=[]; }
+    if (event === "PASSWORD_RECOVERY") {
+      authMode = "reset"; renderAuthScreen(); showAuthScreen();
+    } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+      if (session) {
+        if (authMode !== "reset") { hideAuthScreen(); bootApp(); }
+      } else {
+        authMode = "signin"; renderAuthScreen(); showAuthScreen();
+      }
+    } else if (event === "SIGNED_OUT") {
+      authMode = "signin"; renderAuthScreen(); showAuthScreen();
+      document.getElementById("main-content").innerHTML = "";
+      TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
+    }
   });
 }
 init();
