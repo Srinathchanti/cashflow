@@ -126,6 +126,20 @@ nav.bottom-nav { position:fixed; bottom:16px; left:50%; transform:translateX(-50
 .auth-screen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:var(--surface-0); }
 .auth-card { width:100%; max-width:360px; border-radius:24px; padding:28px 24px; }
 
+.donut-wrap { position:relative; width:180px; height:180px; margin:4px auto 18px; }
+.donut-svg { width:100%; height:100%; display:block; }
+.donut-seg { transition:stroke-width .2s ease, opacity .2s ease; cursor:default; }
+.donut-seg:hover { opacity:.85; }
+.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+.donut-center-value { font-size:1.2rem; font-weight:800; letter-spacing:-.02em; }
+.donut-center-label { font-size:.6875rem; color:var(--text-3); margin-top:2px; }
+.donut-legend { display:flex; flex-direction:column; gap:9px; }
+.donut-legend-row { display:flex; align-items:center; gap:8px; font-size:.8125rem; }
+.donut-legend-label { flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.donut-legend-pct { color:var(--text-3); font-size:.75rem; width:34px; text-align:right; flex-shrink:0; }
+.donut-legend-amt { font-weight:700; min-width:66px; text-align:right; flex-shrink:0; }
+.donut-legend-row.savings-row { border-top:1px dashed var(--border); padding-top:9px; margin-top:2px; }
+
 main { max-width:640px; margin:0 auto; padding:16px 16px 112px; }
 .fade-in { animation:fadeIn .35s cubic-bezier(.22,.61,.36,1); }
 @keyframes fadeIn { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
@@ -239,6 +253,22 @@ textarea.input { min-height:60px; resize:none; }
 </style>
 </head>
 <body>
+
+<div class="auth-screen" id="admin-gate" style="display:none;z-index:101">
+  <div class="auth-card glass-strong">
+    <div class="brand" style="justify-content:center;margin-bottom:22px">
+      <div class="brand-icon"><svg data-lucide="lock"></svg></div>
+      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Restricted Access</div></div>
+    </div>
+    <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">This app is in private testing. Enter the access credentials to continue.</p>
+    <form onsubmit="submitGate(); return false;">
+      <input class="input" id="gate-user" type="text" autocomplete="off" placeholder="Username" style="margin-bottom:10px">
+      <input class="input" id="gate-pass" type="password" autocomplete="off" placeholder="Password" style="margin-bottom:10px">
+      <p id="gate-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none">Incorrect username or password.</p>
+      <button type="submit" class="btn-primary" style="width:100%">Enter</button>
+    </form>
+  </div>
+</div>
 
 <div class="auth-screen" id="auth-screen" style="display:none">
   <div class="auth-card glass-strong" id="auth-card"></div>
@@ -462,6 +492,8 @@ const state = {
   billTab: "bill",
   calCursor: new Date(),
   budCursor: new Date(),
+  donutMode: "month",
+  donutCursor: new Date(),
 };
 const modalState = { type: "expense", category: "", extra: false };
 
@@ -561,10 +593,32 @@ async function deleteRecurringItem(id) {
 /* ══════════════════════════════════════════════
    COMPUTATIONS
    ══════════════════════════════════════════════ */
-function computeSummary({ date, month }) {
+/* ══════════════════════════════════════════════
+   DOUGHNUT CHART (dependency-free SVG)
+   ══════════════════════════════════════════════ */
+function buildDoughnutSVG(slices, total) {
+  const size = 200, r = 80, cx = size/2, cy = size/2, sw = 26;
+  const C = 2 * Math.PI * r;
+  let offset = 0;
+  const arcs = slices.map(s => {
+    const frac = total > 0 ? s.value/total : 0;
+    const dash = Math.max(frac * C, frac > 0 ? 1.5 : 0);
+    const gap = C - dash;
+    const rotation = (offset/C) * 360 - 90;
+    offset += dash;
+    return `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-dasharray="${dash} ${gap}" transform="rotate(${rotation} ${cx} ${cy})"><title>${esc(s.label)}: ${fmt(s.value)}</title></circle>`;
+  }).join("");
+  return `<svg class="donut-svg" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}" opacity=".35"></circle>
+    ${arcs}
+  </svg>`;
+}
+
+function computeSummary({ date, month, year }) {
   let filtered = TXS;
   if (date) filtered = TXS.filter(t => t.date.slice(0,10) === date);
   else if (month) filtered = TXS.filter(t => t.date.slice(0,7) === month);
+  else if (year) filtered = TXS.filter(t => t.date.slice(0,4) === year);
   const inc = filtered.filter(t => t.type === "income");
   const exp = filtered.filter(t => t.type === "expense");
   const totalIncome = inc.reduce((s,t) => s + parseFloat(t.amount), 0);
@@ -1019,6 +1073,58 @@ function renderStory() {
   const dayTxs = TXS.filter(t => t.date.slice(0,10) === state.date).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
   const isToday = state.date === dayStr();
 
+  const donutMode = state.donutMode;
+  const donutCursor = state.donutCursor;
+  let donutSummaryArg, donutPeriodLabel, donutCenterLabel, donutLossLabel;
+  if (donutMode === "year") {
+    donutSummaryArg = { year: String(donutCursor.getFullYear()) };
+    donutPeriodLabel = String(donutCursor.getFullYear());
+    donutCenterLabel = "spent this year"; donutLossLabel = "this year";
+  } else if (donutMode === "all") {
+    donutSummaryArg = {};
+    donutPeriodLabel = "All time";
+    donutCenterLabel = "spent all time"; donutLossLabel = "overall";
+  } else {
+    donutSummaryArg = { month: monthStr(donutCursor) };
+    donutPeriodLabel = donutCursor.toLocaleDateString("en-US", { month:"long", year:"numeric" });
+    donutCenterLabel = "spent this month"; donutLossLabel = "this month";
+  }
+  const dms = computeSummary(donutSummaryArg);
+  const donutSavings = dms.totalIncome - dms.totalExpense;
+  const donutSlices = dms.expCats.sort((a,b) => b.total-a.total).map(c => { const cd = getCat(c.cat, "expense"); return { label: cd.label, color: cd.color, value: c.total }; });
+  if (dms.totalIncome > 0 && donutSavings > 0) donutSlices.push({ label: "Savings", color: "var(--green)", value: donutSavings });
+  const donutTotal = donutSlices.reduce((s,x) => s+x.value, 0);
+  const donutModeBtn = (m, txt) => `<button class="pill${donutMode===m?" active":""}" style="padding:4px 10px;font-size:.6875rem" onclick="setDonutMode('${m}')">${txt}</button>`;
+  let donutCard = `<div class="card chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <p class="label">Category-Wise Expense & Savings</p>
+      <div style="display:flex;gap:4px">${donutModeBtn("month","Month")}${donutModeBtn("year","Year")}${donutModeBtn("all","All time")}</div>
+    </div>
+    ${donutMode !== "all" ? `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
+      <button onclick="donutPrev()">${icon("chevron-left",'style="width:14px;height:14px;color:var(--text-3)"')}</button>
+      <span style="font-size:.75rem;font-weight:700">${donutPeriodLabel}</span>
+      <button onclick="donutNext()">${icon("chevron-right",'style="width:14px;height:14px;color:var(--text-3)"')}</button>
+    </div>` : `<p class="caption" style="text-align:center;margin-bottom:14px">${donutPeriodLabel}</p>`}
+    ${donutSlices.length > 0 ? `
+    <div class="donut-wrap">
+      ${buildDoughnutSVG(donutSlices, donutTotal)}
+      <div class="donut-center">
+        <div class="donut-center-value">${fmt(dms.totalExpense)}</div>
+        <div class="donut-center-label">${donutCenterLabel}</div>
+      </div>
+    </div>
+    <div class="donut-legend">
+      ${donutSlices.map(sl => `<div class="donut-legend-row${sl.label==="Savings"?" savings-row":""}">
+        <span class="dot" style="background:${sl.color}"></span>
+        <span class="donut-legend-label">${esc(sl.label)}</span>
+        <span class="donut-legend-pct">${donutTotal>0?(sl.value/donutTotal*100).toFixed(0):0}%</span>
+        <span class="mono donut-legend-amt">${fmt(sl.value)}</span>
+      </div>`).join("")}
+    </div>
+    ${dms.totalIncome > 0 && donutSavings <= 0 ? `<p class="caption" style="text-align:center;margin-top:12px;color:var(--red)">You've spent ${fmt(Math.abs(donutSavings))} more than you've earned ${donutLossLabel}.</p>` : ""}
+    ` : `<p class="body-sm" style="text-align:center;padding:28px 0;color:var(--text-3)">No transactions for this ${donutMode==="all"?"period":donutMode}.</p>`}
+  </div>`;
+
   let catHtml = "";
   if (s.expCats.length > 0) {
     catHtml = `<div class="card insights-card">
@@ -1063,6 +1169,8 @@ function renderStory() {
     <p class="label" style="margin-bottom:10px;display:flex;align-items:center;gap:6px">${icon("sparkles",'style="width:12px;height:12px"')} Your Story</p>
     ${ins.insights.map(i => `<div class="insight-row">${esc(i)}</div>`).join("")}
   </div>
+
+  ${donutCard}
 
   ${catHtml}
 
@@ -1185,6 +1293,9 @@ function renderBudgets() {
 }
 function budPrev() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()-1); state.budCursor = d; renderMain(); }
 function budNext() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()+1); state.budCursor = d; renderMain(); }
+function setDonutMode(mode) { state.donutMode = mode; renderMain(); }
+function donutPrev() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()-1); else d.setMonth(d.getMonth()-1); state.donutCursor = d; renderMain(); }
+function donutNext() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()+1); else d.setMonth(d.getMonth()+1); state.donutCursor = d; renderMain(); }
 async function submitBudget() {
   const cat = document.getElementById("bud-cat").value, amt = document.getElementById("bud-amt").value;
   if (!cat || !amt) return;
@@ -1556,16 +1667,20 @@ function renderAuthScreen() {
   if (authMode === "reset") {
     body = `
       <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">Choose a new password for your account.</p>
-      <input class="input" id="auth-password" type="password" autocomplete="new-password" placeholder="New password" style="margin-bottom:10px">
-      <input class="input" id="auth-password2" type="password" autocomplete="new-password" placeholder="Confirm new password" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitReset();">
-      ${msgs}
-      <button class="btn-primary" id="auth-submit" onclick="submitReset()" style="width:100%">Update Password</button>`;
+      <form onsubmit="submitReset(); return false;">
+        <input class="input" id="auth-password" type="password" autocomplete="new-password" placeholder="New password" style="margin-bottom:10px">
+        <input class="input" id="auth-password2" type="password" autocomplete="new-password" placeholder="Confirm new password" style="margin-bottom:10px">
+        ${msgs}
+        <button type="submit" class="btn-primary" id="auth-submit" style="width:100%">Update Password</button>
+      </form>`;
   } else if (authMode === "forgot") {
     body = `
       <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">Enter your email and we'll send a reset link.</p>
-      <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')submitForgot();">
-      ${msgs}
-      <button class="btn-primary" id="auth-submit" onclick="submitForgot()" style="width:100%">Send Reset Link</button>
+      <form onsubmit="submitForgot(); return false;">
+        <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
+        ${msgs}
+        <button type="submit" class="btn-primary" id="auth-submit" style="width:100%">Send Reset Link</button>
+      </form>
       <button style="${linkBtnStyle};display:block;margin:14px auto 0" onclick="setAuthMode('signin')">Back to sign in</button>`;
   } else {
     body = `
@@ -1573,11 +1688,13 @@ function renderAuthScreen() {
         <button class="pill ${authMode==="signin"?"active":""}" onclick="setAuthMode('signin')" style="flex:1;justify-content:center">Sign In</button>
         <button class="pill ${authMode==="signup"?"active":""}" onclick="setAuthMode('signup')" style="flex:1;justify-content:center">Sign Up</button>
       </div>
-      <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
-      <input class="input" id="auth-password" type="password" autocomplete="${authMode==="signin"?"current-password":"new-password"}" placeholder="Password" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')submitAuth();">
-      <div style="text-align:right;margin-bottom:10px;min-height:14px">${authMode==="signin"?`<button style="${linkBtnStyle}" onclick="setAuthMode('forgot')">Forgot password?</button>`:""}</div>
-      ${msgs}
-      <button class="btn-primary" id="auth-submit" onclick="submitAuth()" style="width:100%">${authMode==="signin"?"Sign In":"Create Account"}</button>`;
+      <form onsubmit="submitAuth(); return false;">
+        <input class="input" id="auth-email" type="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">
+        <input class="input" id="auth-password" type="password" autocomplete="${authMode==="signin"?"current-password":"new-password"}" placeholder="Password" style="margin-bottom:8px">
+        <div style="text-align:right;margin-bottom:10px;min-height:14px">${authMode==="signin"?`<button type="button" style="${linkBtnStyle}" onclick="setAuthMode('forgot')">Forgot password?</button>`:""}</div>
+        ${msgs}
+        <button type="submit" class="btn-primary" id="auth-submit" style="width:100%">${authMode==="signin"?"Sign In":"Create Account"}</button>
+      </form>`;
   }
   card.innerHTML = brand + body;
   refreshIcons();
@@ -1668,7 +1785,22 @@ async function bootApp() {
   refreshIcons();
 }
 
-async function init() {
+const ADMIN_GATE_USER = "admin";
+const ADMIN_GATE_PASS = "admin123";
+function submitGate() {
+  const u = document.getElementById("gate-user").value.trim();
+  const p = document.getElementById("gate-pass").value;
+  if (u === ADMIN_GATE_USER && p === ADMIN_GATE_PASS) {
+    sessionStorage.setItem("cf_gate_ok", "1");
+    document.getElementById("admin-gate").style.display = "none";
+    startApp();
+  } else {
+    document.getElementById("gate-error").style.display = "block";
+    document.getElementById("gate-pass").value = "";
+  }
+}
+
+async function startApp() {
   applyTheme();
   refreshIcons();
   renderAuthScreen();
@@ -1687,6 +1819,15 @@ async function init() {
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
     }
   });
+}
+
+function init() {
+  if (sessionStorage.getItem("cf_gate_ok") === "1") {
+    startApp();
+  } else {
+    document.getElementById("admin-gate").style.display = "flex";
+    refreshIcons();
+  }
 }
 init();
 </script>
