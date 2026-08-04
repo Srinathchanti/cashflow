@@ -254,22 +254,6 @@ textarea.input { min-height:60px; resize:none; }
 </head>
 <body>
 
-<div class="auth-screen" id="admin-gate" style="display:none;z-index:101">
-  <div class="auth-card glass-strong">
-    <div class="brand" style="justify-content:center;margin-bottom:22px">
-      <div class="brand-icon"><svg data-lucide="lock"></svg></div>
-      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Restricted Access</div></div>
-    </div>
-    <p style="font-size:.8125rem;color:var(--text-2);margin-bottom:16px;text-align:center">This app is in private testing. Enter the access credentials to continue.</p>
-    <form onsubmit="submitGate(); return false;">
-      <input class="input" id="gate-user" type="text" autocomplete="off" placeholder="Username" style="margin-bottom:10px">
-      <input class="input" id="gate-pass" type="password" autocomplete="off" placeholder="Password" style="margin-bottom:10px">
-      <p id="gate-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none">Incorrect username or password.</p>
-      <button type="submit" class="btn-primary" style="width:100%">Enter</button>
-    </form>
-  </div>
-</div>
-
 <div class="auth-screen" id="auth-screen" style="display:none">
   <div class="auth-card glass-strong" id="auth-card"></div>
 </div>
@@ -1785,21 +1769,6 @@ async function bootApp() {
   refreshIcons();
 }
 
-const ADMIN_GATE_USER = "admin";
-const ADMIN_GATE_PASS = "admin123";
-function submitGate() {
-  const u = document.getElementById("gate-user").value.trim();
-  const p = document.getElementById("gate-pass").value;
-  if (u === ADMIN_GATE_USER && p === ADMIN_GATE_PASS) {
-    sessionStorage.setItem("cf_gate_ok", "1");
-    document.getElementById("admin-gate").style.display = "none";
-    startApp();
-  } else {
-    document.getElementById("gate-error").style.display = "block";
-    document.getElementById("gate-pass").value = "";
-  }
-}
-
 async function startApp() {
   applyTheme();
   refreshIcons();
@@ -1821,14 +1790,7 @@ async function startApp() {
   });
 }
 
-function init() {
-  if (sessionStorage.getItem("cf_gate_ok") === "1") {
-    startApp();
-  } else {
-    document.getElementById("admin-gate").style.display = "flex";
-    refreshIcons();
-  }
-}
+function init() { startApp(); }
 init();
 </script>
 </body>
