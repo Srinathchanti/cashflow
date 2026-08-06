@@ -244,6 +244,24 @@ main { max-width:640px; margin:0 auto; padding:16px 16px 112px; }
 .notes-toggle svg { width:11px; height:11px; }
 .notes-area { display:none; margin-bottom:12px; }
 .notes-area.open { display:block; }
+.split-card { border-radius:16px; border:1px solid var(--border); background:var(--surface-1); padding:14px; margin-bottom:12px; }
+.split-head-row { display:flex; align-items:center; justify-content:space-between; }
+.split-toggle { position:relative; display:inline-flex; height:22px; width:40px; flex-shrink:0; align-items:center; border-radius:999px; background:var(--border); transition:background .2s; border:none; cursor:pointer; padding:0; }
+.split-toggle.on { background:var(--grad-1); }
+.split-toggle-knob { position:absolute; left:2px; height:16px; width:16px; border-radius:999px; background:#fff; transition:transform .2s; transform:translateX(0); }
+.split-toggle.on .split-toggle-knob { transform:translateX(18px); }
+.split-body { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.friend-chip { display:inline-flex; align-items:center; gap:6px; }
+.friend-chip.selected { border-color:var(--blue); background:var(--blue-soft); color:var(--text-1); }
+.friend-avatar { width:20px; height:20px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#0b0d16; flex-shrink:0; }
+.split-mode-tabs { display:flex; gap:4px; background:var(--surface-2); border-radius:12px; padding:4px; margin-bottom:12px; }
+.split-mode-tab { flex:1; padding:6px 0; border-radius:8px; font-size:11px; font-weight:700; text-align:center; color:var(--text-3); background:transparent; border:none; cursor:pointer; }
+.split-mode-tab.active { background:var(--grad-1); color:#fff; }
+.split-participant-row { display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:10px; background:var(--surface-2); margin-bottom:6px; }
+.split-exact-input { width:76px; border-radius:8px; border:1px solid var(--border); background:var(--surface-0); color:var(--text-1); font-family:inherit; font-size:.75rem; padding:5px 7px; text-align:right; }
+.split-exact-input:focus { outline:none; border-color:var(--border-focus); }
+.split-balance-banner { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:10px; font-size:11px; font-weight:700; margin-top:4px; }
+.tx-split-badge { display:inline-flex; align-items:center; gap:3px; padding:1px 6px; border-radius:4px; font-size:8px; font-weight:700; background:var(--blue-soft); color:var(--blue); cursor:pointer; }
 textarea.input { min-height:60px; resize:none; }
 .spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:999px; margin:0 auto; animation:spin 1s linear infinite; }
 @keyframes spin { to{ transform:rotate(360deg); } }
@@ -269,6 +287,7 @@ textarea.input { min-height:60px; resize:none; }
     </div>
     <div class="hdr-actions">
       <button class="icon-btn" onclick="toggleSearch()"><svg data-lucide="search"></svg></button>
+      <button class="icon-btn" onclick="openSplitwiseHub()" title="Splitwise"><svg data-lucide="users-round"></svg></button>
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()"><svg data-lucide="moon"></svg></button>
       <button class="icon-btn" onclick="handleSignOut()" title="Sign out"><svg data-lucide="log-out"></svg></button>
       <button class="add-btn-desktop" onclick="openModal()"><svg data-lucide="plus" style="width:13px;height:13px"></svg> Add</button>
@@ -330,12 +349,31 @@ textarea.input { min-height:60px; resize:none; }
     <p class="label" style="margin-bottom:8px">Category</p>
     <div class="cat-grid" id="cat-grid"></div>
     <input class="input" id="tx-desc" placeholder="Description (optional)" style="margin-bottom:12px">
+    <div id="split-section"></div>
     <button class="notes-toggle" onclick="modalToggleNotes()"><svg data-lucide="sticky-note"></svg> <span id="notes-toggle-label">Add</span> notes</button>
     <div class="notes-area" id="notes-area">
       <textarea class="input" id="tx-notes" placeholder="Detailed notes..." rows="2"></textarea>
     </div>
     <button class="btn-primary" id="tx-submit" onclick="modalSubmit()" disabled>Add Expense</button>
   </div>
+</div>
+
+<!-- Split Detail Modal -->
+<div class="modal-overlay" id="split-overlay" onclick="closeSplitDetail()"></div>
+<div class="modal-box" id="split-box">
+  <div class="modal-inner glass-strong" id="split-detail-inner"></div>
+</div>
+
+<!-- Split Bill Modal -->
+<div class="modal-overlay" id="bill-split-overlay" onclick="closeBillSplitModal()"></div>
+<div class="modal-box" id="bill-split-box">
+  <div class="modal-inner glass-strong" id="bill-split-detail-inner"></div>
+</div>
+
+<!-- Splitwise Hub -->
+<div class="modal-overlay" id="splitwise-overlay" onclick="closeSplitwiseHub()"></div>
+<div class="modal-box" id="splitwise-box">
+  <div class="modal-inner glass-strong" id="splitwise-hub-inner" style="max-height:80vh"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.js"></script>
@@ -410,7 +448,7 @@ function fmtCompact(n) {
   if (n >= 1000) return `$${(n/1000).toFixed(1)}K`;
   return `$${n.toFixed(0)}`;
 }
-function dayStr(d) { const dt = d || new Date(); return dt.toISOString().split("T")[0]; }
+function dayStr(d) { const dt = d || new Date(); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; }
 function monthStr(d) { const dt = d || new Date(); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`; }
 function prettyDate(iso) {
   const d = new Date(iso + "T12:00:00"); const today = dayStr();
@@ -433,21 +471,30 @@ function mapBudget(r) { return { id:r.id, category:r.category, amount:r.amount, 
 function mapGoal(r) { return { id:r.id, name:r.name, targetAmount:r.target_amount, currentAmount:r.current_amount, deadline:r.deadline, color:r.color }; }
 function mapBill(r) { return { id:r.id, name:r.name, amount:r.amount, currency:r.currency, billType:r.bill_type, category:r.category, dueDay:r.due_day, frequency:r.frequency, isPaid:r.is_paid, paidDate:r.paid_date, totalInstallments:r.total_installments, completedInstallments:r.completed_installments, totalLoanAmount:r.total_loan_amount, isActive:r.is_active, nextDue:r.next_due }; }
 function mapRecurring(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", frequency:r.frequency, startDate:r.start_date, endDate:r.end_date, nextDue:r.next_due, isActive:r.is_active }; }
+function mapFriend(r) { return { id:r.id, name:r.name, email:r.email||"", avatarColor:r.avatar_color||"#818cf8" }; }
+function mapSplit(r) { return { id:r.id, transactionId:r.transaction_id, billId:r.bill_id, paidBy:r.paid_by, splitType:r.split_type, totalAmount:r.total_amount }; }
+function mapParticipant(r) { return { id:r.id, splitId:r.split_id, friendId:r.friend_id, isPayer:r.is_payer, displayName:r.display_name, amountOwed:r.amount_owed, status:r.status, settledAt:r.settled_at }; }
 
 async function loadAllFromSupabase() {
-  const [txRes, budRes, goalRes, billRes, recRes] = await Promise.all([
+  const [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes] = await Promise.all([
     sb.from("transactions").select("*").order("date", { ascending:false }).order("created_at", { ascending:false }),
     sb.from("budgets").select("*"),
     sb.from("goals").select("*").order("created_at", { ascending:true }),
     sb.from("bills").select("*"),
     sb.from("recurring").select("*"),
+    sb.from("friends").select("*").order("name", { ascending:true }),
+    sb.from("expense_splits").select("*"),
+    sb.from("split_participants").select("*"),
   ]);
-  [txRes, budRes, goalRes, billRes, recRes].forEach(r => { if (r.error) console.error("Supabase load error:", r.error); });
+  [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes].forEach(r => { if (r.error) console.error("Supabase load error:", r.error); });
   TXS = (txRes.data||[]).map(mapTx);
   BUDGETS = (budRes.data||[]).map(mapBudget);
   GOALS = (goalRes.data||[]).map(mapGoal);
   BILLS = (billRes.data||[]).map(mapBill);
   RECURRING = (recRes.data||[]).map(mapRecurring);
+  FRIENDS = (friendRes.data||[]).map(mapFriend);
+  SPLITS = (splitRes.data||[]).map(mapSplit);
+  PARTICIPANTS = (partRes.data||[]).map(mapParticipant);
 }
 
 /* ══════════════════════════════════════════════
@@ -463,6 +510,9 @@ let BUDGETS = [];
 let GOALS = [];
 let RECURRING = [];
 let BILLS = [];
+let FRIENDS = [];
+let SPLITS = [];
+let PARTICIPANTS = [];
 let THEME = Store.get("theme", "dark");
 let CHAT_MSGS = Store.get("chatHistory", null) || [{ role:"assistant", html:'<span class="cb-line">Hi! I\'m your finance assistant. Ask me anything about your spending, budgets, goals, or bills \u2014 all answered instantly from your own data, nothing leaves this device.</span>' }];
 
@@ -476,10 +526,10 @@ const state = {
   billTab: "bill",
   calCursor: new Date(),
   budCursor: new Date(),
-  donutMode: "month",
+  donutMode: "day",
   donutCursor: new Date(),
 };
-const modalState = { type: "expense", category: "", extra: false };
+const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false } };
 
 /* ══════════════════════════════════════════════
    CRUD (Supabase-backed)
@@ -495,6 +545,43 @@ async function deleteTransaction(id) {
   const { error } = await sb.from("transactions").delete().eq("id", id);
   if (error) { alert("Couldn't delete: " + error.message); return; }
   TXS = TXS.filter(t => t.id !== id);
+  const split = SPLITS.find(s => s.transactionId === id);
+  if (split) { PARTICIPANTS = PARTICIPANTS.filter(p => p.splitId !== split.id); SPLITS = SPLITS.filter(s => s.id !== split.id); }
+}
+
+async function addFriend(name, email) {
+  const colors = ["#818cf8","#34eab3","#fbbf24","#f472b6","#c4b5fd","#60a5fa","#fb923c"];
+  const color = colors[FRIENDS.length % colors.length];
+  const { data, error } = await sb.from("friends").insert({ name, email: email || null, avatar_color: color }).select().single();
+  if (error) { alert("Couldn't add friend: " + error.message); return null; }
+  const f = mapFriend(data); FRIENDS.push(f); return f;
+}
+async function deleteFriend(id) {
+  const { error } = await sb.from("friends").delete().eq("id", id);
+  if (error) { alert("Couldn't delete friend: " + error.message); return; }
+  FRIENDS = FRIENDS.filter(f => f.id !== id);
+}
+
+async function saveSplitForTransaction(transactionId, payload) {
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: splitRow, error: splitErr } = await sb.from("expense_splits").insert({
+    transaction_id: transactionId, paid_by: user.id, split_type: payload.mode, total_amount: payload.totalAmount,
+  }).select().single();
+  if (splitErr) { alert("Couldn't save split: " + splitErr.message); return; }
+  const rows = payload.participants.map(p => ({
+    split_id: splitRow.id, friend_id: p.friendId, is_payer: p.isPayer, display_name: p.displayName, amount_owed: p.amountOwed, status: p.status,
+  }));
+  const { data: partRows, error: partErr } = await sb.from("split_participants").insert(rows).select();
+  if (partErr) { alert("Couldn't save split participants: " + partErr.message); return; }
+  SPLITS.push(mapSplit(splitRow));
+  PARTICIPANTS.push(...partRows.map(mapParticipant));
+}
+async function toggleParticipantStatus(id) {
+  const p = PARTICIPANTS.find(x => x.id === id); if (!p) return;
+  const nextStatus = p.status === "settled" ? "pending" : "settled";
+  const { data, error } = await sb.from("split_participants").update({ status: nextStatus, settled_at: nextStatus === "settled" ? new Date().toISOString() : null }).eq("id", id).select().single();
+  if (error) { alert("Couldn't update: " + error.message); return; }
+  Object.assign(p, mapParticipant(data));
 }
 
 async function addBudget(cat, amt, month) {
@@ -550,10 +637,26 @@ async function toggleBillPaid(id) {
   if (error) { alert("Couldn't update bill: " + error.message); return; }
   Object.assign(b, mapBill(data));
 }
+async function saveSplitForBill(billId, payload) {
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: splitRow, error: splitErr } = await sb.from("expense_splits").insert({
+    bill_id: billId, paid_by: user.id, split_type: payload.mode, total_amount: payload.totalAmount,
+  }).select().single();
+  if (splitErr) { alert("Couldn't save split: " + splitErr.message); return; }
+  const rows = payload.participants.map(p => ({
+    split_id: splitRow.id, friend_id: p.friendId, is_payer: p.isPayer, display_name: p.displayName, amount_owed: p.amountOwed, status: p.status,
+  }));
+  const { data: partRows, error: partErr } = await sb.from("split_participants").insert(rows).select();
+  if (partErr) { alert("Couldn't save split participants: " + partErr.message); return; }
+  SPLITS.push(mapSplit(splitRow));
+  PARTICIPANTS.push(...partRows.map(mapParticipant));
+}
 async function deleteBillItem(id) {
   const { error } = await sb.from("bills").delete().eq("id", id);
   if (error) { alert("Couldn't delete: " + error.message); return; }
   BILLS = BILLS.filter(b => b.id !== id);
+  const split = SPLITS.find(s => s.billId === id);
+  if (split) { PARTICIPANTS = PARTICIPANTS.filter(p => p.splitId !== split.id); SPLITS = SPLITS.filter(s => s.id !== split.id); }
 }
 
 async function addRecurringItem(f) {
@@ -1035,6 +1138,15 @@ function txRowHtml(t) {
   const isInc = t.type === "income";
   const amt = parseFloat(t.amount);
   const time = new Date(t.createdAt).toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  const split = SPLITS.find(s => s.transactionId === t.id);
+  let splitBadge = "";
+  if (split) {
+    const parts = PARTICIPANTS.filter(p => p.splitId === split.id && !p.isPayer);
+    const settled = parts.filter(p => p.status === "settled").length;
+    splitBadge = `<span class="tx-split-badge" onclick="event.stopPropagation();openSplitDetail(${t.id})">${icon("users",'style="width:9px;height:9px"')} ${settled}/${parts.length} settled</span>`;
+  } else if (t.type === "expense") {
+    splitBadge = `<span class="tx-split-badge" style="background:var(--surface-2);color:var(--text-3)" onclick="event.stopPropagation();onSplitTxClick(${t.id})">${icon("users",'style="width:9px;height:9px"')} Split</span>`;
+  }
   return `
   <div class="tx-row card-flat">
     <div class="tx-icon" style="background:${cat.soft}">
@@ -1043,13 +1155,276 @@ function txRowHtml(t) {
     </div>
     <div class="tx-main">
       <div class="tx-title">${esc(t.description || cat.label)} ${t.notes ? '<span style="opacity:.4">•</span>' : ""}</div>
-      <div class="tx-meta"><span>${esc(cat.label)}</span><span>·</span><span>${time}</span>${t.isRecurring ? '<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--blue-soft);color:var(--blue)">AUTO</span>' : ""}</div>
+      <div class="tx-meta"><span>${esc(cat.label)}</span><span>·</span><span>${time}</span>${t.isRecurring ? '<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--blue-soft);color:var(--blue)">AUTO</span>' : ""}${splitBadge}</div>
     </div>
     <span class="tx-amt" style="color:${isInc ? "var(--green)" : "var(--red)"}">${isInc?"+":"-"}${fmt(amt, t.currency)}</span>
     <button class="tx-del" onclick="onDeleteTx(${t.id})">${icon("trash-2")}</button>
   </div>`;
 }
 async function onDeleteTx(id) { await deleteTransaction(id); renderMain(); }
+
+function openSplitDetail(txId) {
+  const split = SPLITS.find(s => s.transactionId === txId);
+  if (!split) return;
+  openSplitDetailForSplit(split);
+}
+function openSplitDetailForSplit(split) {
+  renderSplitDetailInner(split);
+  document.getElementById("split-overlay").classList.add("open");
+  document.getElementById("split-box").classList.add("open");
+}
+function closeSplitDetail() { document.getElementById("split-overlay").classList.remove("open"); document.getElementById("split-box").classList.remove("open"); }
+function splitSubjectInfo(split) {
+  if (split.transactionId) {
+    const tx = TXS.find(t => t.id === split.transactionId);
+    const cat = tx ? getCat(tx.category, tx.type) : null;
+    return { title: tx ? (tx.description || cat.label) : "Transaction" };
+  }
+  const bill = BILLS.find(b => b.id === split.billId);
+  return { title: bill ? bill.name : "Bill" };
+}
+function renderSplitDetailInner(split) {
+  const { title } = splitSubjectInfo(split);
+  const parts = PARTICIPANTS.filter(p => p.splitId === split.id).sort((a,b) => (b.isPayer?1:0) - (a.isPayer?1:0));
+  document.getElementById("split-detail-inner").innerHTML = `
+    <div class="modal-head">
+      <h2 class="heading-md">Split Details</h2>
+      <button class="icon-btn" style="width:32px;height:32px" onclick="closeSplitDetail()">${icon("x",'style="width:15px;height:15px"')}</button>
+    </div>
+    <p class="body-sm" style="margin-bottom:2px">${esc(title)}</p>
+    <p class="caption" style="margin-bottom:14px">${fmt(split.totalAmount)} total · split ${split.splitType === "equal" ? "equally" : "with custom amounts"}</p>
+    ${parts.map(p => `<div class="split-participant-row">
+      <span style="font-size:.75rem">${esc(p.displayName)}${p.isPayer?' <span style="color:var(--text-4);font-size:.625rem">(paid)</span>':""}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="mono" style="font-size:.75rem">${fmt(p.amountOwed)}</span>
+        ${p.isPayer ? "" : `<button class="pill" style="padding:3px 10px;font-size:.625rem;${p.status==="settled"?"background:var(--green-soft);color:var(--green);border-color:transparent":""}" onclick="onToggleParticipant(${p.id})">${p.status==="settled"?"Settled":"Pending"}</button>`}
+      </div>
+    </div>`).join("")}
+  `;
+  refreshIcons();
+}
+async function onToggleParticipant(id) {
+  await toggleParticipantStatus(id);
+  const p = PARTICIPANTS.find(x => x.id === id);
+  const split = SPLITS.find(s => s.id === p.splitId);
+  renderSplitDetailInner(split);
+}
+
+/* ══════════════════════════════════════════════
+   SPLIT CREATION (for an existing transaction or bill)
+   ══════════════════════════════════════════════ */
+let splitCreateState = null;
+function onSplitBillClick(billId) {
+  const existing = SPLITS.find(s => s.billId === billId);
+  if (existing) { openSplitDetailForSplit(existing); return; }
+  openSplitCreateModal("bill", billId);
+}
+function onSplitTxClick(txId) {
+  const existing = SPLITS.find(s => s.transactionId === txId);
+  if (existing) { openSplitDetailForSplit(existing); return; }
+  openSplitCreateModal("tx", txId);
+}
+function getSplitCreateTarget() {
+  if (splitCreateState.targetType === "bill") {
+    const bill = BILLS.find(b => b.id === splitCreateState.targetId);
+    return bill ? { name: bill.name, amount: parseFloat(bill.amount) } : null;
+  }
+  const tx = TXS.find(t => t.id === splitCreateState.targetId);
+  return tx ? { name: tx.description || getCat(tx.category, tx.type).label, amount: parseFloat(tx.amount) } : null;
+}
+function openSplitCreateModal(targetType, targetId) {
+  splitCreateState = { targetType, targetId, mode:"equal", friendIds:[], exact:{}, addingFriend:false };
+  renderSplitCreateModal();
+  document.getElementById("bill-split-overlay").classList.add("open");
+  document.getElementById("bill-split-box").classList.add("open");
+}
+function closeBillSplitModal() {
+  document.getElementById("bill-split-overlay").classList.remove("open");
+  document.getElementById("bill-split-box").classList.remove("open");
+  splitCreateState = null;
+}
+function computeBillSplitCalc() {
+  const target = getSplitCreateTarget();
+  return calcSplitAmounts(target ? target.amount : 0, splitCreateState);
+}
+function renderSplitCreateModal() {
+  const target = getSplitCreateTarget();
+  if (!target) { closeBillSplitModal(); return; }
+  const sp = splitCreateState;
+  const calc = computeBillSplitCalc();
+  let html = `
+    <div class="modal-head">
+      <h2 class="heading-md">Split "${esc(target.name)}"</h2>
+      <button class="icon-btn" style="width:32px;height:32px" onclick="closeBillSplitModal()">${icon("x",'style="width:15px;height:15px"')}</button>
+    </div>
+    <p class="caption" style="margin-bottom:16px">${fmt(target.amount)} total</p>
+    <p class="label" style="margin-bottom:8px">Split with</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      ${FRIENDS.map(f => {
+        const sel = sp.friendIds.includes(f.id);
+        return `<button type="button" class="pill friend-chip${sel?" selected":""}" onclick="toggleBillSplitFriend(${f.id})">
+          <span class="friend-avatar" style="background:${f.avatarColor}">${esc(f.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase())}</span>
+          ${esc(f.name)}${sel?icon("check",'style="width:11px;height:11px"'):""}
+        </button>`;
+      }).join("")}
+      <button type="button" class="pill" onclick="toggleBillAddFriendInput()">${icon("plus",'style="width:11px;height:11px"')} Add friend</button>
+    </div>
+    ${sp.addingFriend ? `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      <input class="input" id="new-bill-friend-name" placeholder="Friend's name" onkeydown="if(event.key==='Enter')document.getElementById('new-bill-friend-email').focus();">
+      <input class="input" id="new-bill-friend-email" type="email" placeholder="Email (optional, for notifications)" onkeydown="if(event.key==='Enter')submitNewBillFriend();">
+      <button class="btn-primary" onclick="submitNewBillFriend()">Add friend</button>
+    </div>` : ""}
+    <div class="split-mode-tabs">
+      <button class="split-mode-tab${sp.mode==="equal"?" active":""}" onclick="setBillSplitMode('equal')">Split Equally</button>
+      <button class="split-mode-tab${sp.mode==="exact"?" active":""}" onclick="setBillSplitMode('exact')">Split Exactly</button>
+    </div>`;
+  if (calc.participants.length > 1) {
+    html += calc.participants.map(p => `<div class="split-participant-row">
+      <span style="font-size:.75rem">${esc(p.name)}${p.isPayer?' <span style="color:var(--text-4);font-size:.625rem">(paid)</span>':""}</span>
+      ${sp.mode === "equal"
+        ? `<span class="mono" style="font-size:.75rem">${fmt(calc.amounts[p.id]||0)}</span>`
+        : `<input type="number" step="0.01" min="0" class="split-exact-input" value="${sp.exact[p.id] ?? (calc.amounts[p.id]||0).toFixed(2)}" oninput="setBillSplitExactAmount('${p.id}', this.value)">`
+      }
+    </div>`).join("");
+    if (sp.mode === "exact") {
+      const bal = calc.isBalanced;
+      html += `<div class="split-balance-banner" id="bill-split-balance-banner" style="background:${bal?"var(--green-soft)":"var(--red-soft)"};color:${bal?"var(--green)":"var(--red)"}">
+        <span>${bal ? "Amounts match the total" : (calc.remaining>0 ? "Remaining to allocate" : "Over the total by")}</span>
+        ${bal?"":`<span class="mono">${fmt(Math.abs(calc.remaining))}</span>`}
+      </div>`;
+    }
+    html += `<button class="btn-primary" style="margin-top:14px" onclick="submitBillSplit()">Save Split</button>`;
+  } else {
+    html += `<p class="caption" style="text-align:center;padding:14px 0">Pick at least one friend to split with.</p>`;
+  }
+  document.getElementById("bill-split-detail-inner").innerHTML = html;
+  refreshIcons();
+}
+function toggleBillSplitFriend(id) {
+  splitCreateState.friendIds = splitCreateState.friendIds.includes(id) ? splitCreateState.friendIds.filter(x => x !== id) : [...splitCreateState.friendIds, id];
+  delete splitCreateState.exact[id];
+  renderSplitCreateModal();
+}
+function setBillSplitMode(mode) {
+  const sp = splitCreateState;
+  if (mode === "exact") { const calc = computeBillSplitCalc(); calc.participants.forEach(p => { if (sp.exact[p.id] === undefined) sp.exact[p.id] = (calc.amounts[p.id]||0).toFixed(2); }); }
+  sp.mode = mode; renderSplitCreateModal();
+}
+function setBillSplitExactAmount(id, value) {
+  splitCreateState.exact[id] = value;
+  const calc = computeBillSplitCalc();
+  const banner = document.getElementById("bill-split-balance-banner");
+  if (!banner) return;
+  const bal = calc.isBalanced;
+  banner.style.background = bal ? "var(--green-soft)" : "var(--red-soft)";
+  banner.style.color = bal ? "var(--green)" : "var(--red)";
+  banner.innerHTML = `<span>${bal ? "Amounts match the total" : (calc.remaining>0 ? "Remaining to allocate" : "Over the total by")}</span>${bal?"":`<span class="mono">${fmt(Math.abs(calc.remaining))}</span>`}`;
+}
+function toggleBillAddFriendInput() { splitCreateState.addingFriend = !splitCreateState.addingFriend; renderSplitCreateModal(); if (splitCreateState.addingFriend) setTimeout(() => document.getElementById("new-bill-friend-name")?.focus(), 0); }
+async function submitNewBillFriend() {
+  const nameInput = document.getElementById("new-bill-friend-name");
+  const emailInput = document.getElementById("new-bill-friend-email");
+  const name = nameInput.value.trim(); if (!name) return;
+  const f = await addFriend(name, emailInput.value.trim());
+  if (f) { splitCreateState.friendIds.push(f.id); splitCreateState.addingFriend = false; renderSplitCreateModal(); }
+}
+async function submitBillSplit() {
+  const calc = computeBillSplitCalc();
+  if (calc.participants.length < 2) return;
+  if (!calc.isBalanced) { alert("Split amounts don't add up to the total yet."); return; }
+  const payload = {
+    mode: splitCreateState.mode, totalAmount: calc.total,
+    participants: calc.participants.map(p => ({ friendId: p.isPayer ? null : p.id, isPayer: p.isPayer, displayName: p.name, amountOwed: calc.amounts[p.id]||0, status: p.isPayer ? "settled" : "pending" })),
+  };
+  if (splitCreateState.targetType === "bill") await saveSplitForBill(splitCreateState.targetId, payload);
+  else await saveSplitForTransaction(splitCreateState.targetId, payload);
+  closeBillSplitModal();
+  renderMain();
+  if (document.getElementById("splitwise-overlay")?.classList.contains("open")) renderSplitwiseHub();
+}
+
+/* ══════════════════════════════════════════════
+   SPLITWISE HUB
+   ══════════════════════════════════════════════ */
+let hubNewSplitOpen = false;
+function openSplitwiseHub() {
+  hubNewSplitOpen = false;
+  renderSplitwiseHub();
+  document.getElementById("splitwise-overlay").classList.add("open");
+  document.getElementById("splitwise-box").classList.add("open");
+}
+function closeSplitwiseHub() {
+  document.getElementById("splitwise-overlay").classList.remove("open");
+  document.getElementById("splitwise-box").classList.remove("open");
+}
+function toggleHubNewSplitForm() {
+  hubNewSplitOpen = !hubNewSplitOpen;
+  renderSplitwiseHub();
+  if (hubNewSplitOpen) setTimeout(() => document.getElementById("hub-new-desc")?.focus(), 0);
+}
+async function submitHubNewSplit() {
+  const desc = document.getElementById("hub-new-desc").value.trim();
+  const amount = parseFloat(document.getElementById("hub-new-amount").value);
+  if (!amount || amount <= 0) { alert("Enter an amount first."); return; }
+  const txRow = await addTransaction({ type:"expense", amount, category:"other_expense", description: desc, currency:"USD", date: new Date().toISOString() });
+  if (!txRow) return;
+  hubNewSplitOpen = false;
+  closeSplitwiseHub();
+  openSplitCreateModal("tx", txRow.id);
+}
+function hubOpenDetail(splitId) {
+  closeSplitwiseHub();
+  const split = SPLITS.find(s => s.id === splitId);
+  if (split) openSplitDetailForSplit(split);
+}
+function hubStartSplit(targetType, targetId) {
+  closeSplitwiseHub();
+  openSplitCreateModal(targetType, targetId);
+}
+function renderSplitwiseHub() {
+  const pending = SPLITS.filter(s => PARTICIPANTS.some(p => p.splitId === s.id && !p.isPayer && p.status === "pending"));
+  const settledSplits = SPLITS.filter(s => !pending.includes(s));
+  const unsplitTx = TXS.filter(t => t.type === "expense" && !SPLITS.some(s => s.transactionId === t.id)).slice(0, 8);
+  const unsplitBills = BILLS.filter(b => !SPLITS.some(s => s.billId === b.id)).slice(0, 8);
+
+  const splitRow = (s) => {
+    const { title } = splitSubjectInfo(s);
+    const parts = PARTICIPANTS.filter(p => p.splitId === s.id && !p.isPayer);
+    const settled = parts.filter(p => p.status === "settled").length;
+    return `<div class="split-participant-row" style="cursor:pointer" onclick="hubOpenDetail(${s.id})">
+      <span style="font-size:.75rem">${esc(title)}</span>
+      <span class="tx-split-badge">${icon("users",'style="width:9px;height:9px"')} ${settled}/${parts.length} settled</span>
+    </div>`;
+  };
+  const addRow = (type, id, name, amount) => `<div class="split-participant-row">
+    <span style="font-size:.75rem">${esc(name)} <span class="mono" style="color:var(--text-3)">${fmt(amount)}</span></span>
+    <button class="pill" style="padding:3px 10px;font-size:.625rem" onclick="hubStartSplit('${type}',${id})">${icon("plus",'style="width:10px;height:10px"')} Split</button>
+  </div>`;
+
+  document.getElementById("splitwise-hub-inner").innerHTML = `
+    <div class="modal-head">
+      <h2 class="heading-md">Splitwise</h2>
+      <button class="icon-btn" style="width:32px;height:32px" onclick="closeSplitwiseHub()">${icon("x",'style="width:15px;height:15px"')}</button>
+    </div>
+    <button class="btn-primary" style="margin-bottom:16px" onclick="toggleHubNewSplitForm()">${icon("plus",'style="width:13px;height:13px"')} New Split</button>
+    ${hubNewSplitOpen ? `<div class="split-card" style="margin-bottom:16px">
+      <input class="input" id="hub-new-desc" placeholder="What's this for? (e.g. Dinner, Trip to Tahoe)" style="margin-bottom:8px">
+      <input class="input" id="hub-new-amount" type="number" step="0.01" min="0" placeholder="Total amount" style="margin-bottom:10px">
+      <button class="btn-primary" onclick="submitHubNewSplit()">Continue to add friends</button>
+    </div>` : ""}
+    <p class="label" style="margin-bottom:8px">Needs settling</p>
+    ${pending.length ? pending.map(splitRow).join("") : `<p class="caption" style="padding:8px 0 16px">Nothing pending — you're all settled up.</p>`}
+    ${settledSplits.length ? `<p class="label" style="margin:16px 0 8px">Settled</p>${settledSplits.map(splitRow).join("")}` : ""}
+    <p class="label" style="margin:20px 0 8px">Add a split</p>
+    ${(unsplitTx.length + unsplitBills.length) === 0
+      ? `<p class="caption" style="padding:8px 0">No recent expenses or bills to split yet.</p>`
+      : [
+          ...unsplitTx.map(t => addRow("tx", t.id, t.description || getCat(t.category,"expense").label, parseFloat(t.amount))),
+          ...unsplitBills.map(b => addRow("bill", b.id, b.name, parseFloat(b.amount))),
+        ].join("")}
+  `;
+  refreshIcons();
+}
 
 function renderStory() {
   const s = computeSummary({ date: state.date });
@@ -1060,7 +1435,12 @@ function renderStory() {
   const donutMode = state.donutMode;
   const donutCursor = state.donutCursor;
   let donutSummaryArg, donutPeriodLabel, donutCenterLabel, donutLossLabel;
-  if (donutMode === "year") {
+  if (donutMode === "day") {
+    const ds = dayStr(donutCursor);
+    donutSummaryArg = { date: ds };
+    donutPeriodLabel = ds === dayStr() ? "Today" : donutCursor.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+    donutCenterLabel = "spent this day"; donutLossLabel = "today";
+  } else if (donutMode === "year") {
     donutSummaryArg = { year: String(donutCursor.getFullYear()) };
     donutPeriodLabel = String(donutCursor.getFullYear());
     donutCenterLabel = "spent this year"; donutLossLabel = "this year";
@@ -1082,7 +1462,7 @@ function renderStory() {
   let donutCard = `<div class="card chart-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="label">Category-Wise Expense & Savings</p>
-      <div style="display:flex;gap:4px">${donutModeBtn("month","Month")}${donutModeBtn("year","Year")}${donutModeBtn("all","All time")}</div>
+      <div style="display:flex;gap:4px">${donutModeBtn("day","Day")}${donutModeBtn("month","Month")}${donutModeBtn("year","Year")}${donutModeBtn("all","All time")}</div>
     </div>
     ${donutMode !== "all" ? `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
       <button onclick="donutPrev()">${icon("chevron-left",'style="width:14px;height:14px;color:var(--text-3)"')}</button>
@@ -1278,8 +1658,8 @@ function renderBudgets() {
 function budPrev() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()-1); state.budCursor = d; renderMain(); }
 function budNext() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()+1); state.budCursor = d; renderMain(); }
 function setDonutMode(mode) { state.donutMode = mode; renderMain(); }
-function donutPrev() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()-1); else d.setMonth(d.getMonth()-1); state.donutCursor = d; renderMain(); }
-function donutNext() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()+1); else d.setMonth(d.getMonth()+1); state.donutCursor = d; renderMain(); }
+function donutPrev() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()-1); else if (state.donutMode === "day") d.setDate(d.getDate()-1); else d.setMonth(d.getMonth()-1); state.donutCursor = d; renderMain(); }
+function donutNext() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()+1); else if (state.donutMode === "day") d.setDate(d.getDate()+1); else d.setMonth(d.getMonth()+1); if (state.donutMode !== "day" || d <= new Date()) { state.donutCursor = d; renderMain(); } }
 async function submitBudget() {
   const cat = document.getElementById("bud-cat").value, amt = document.getElementById("bud-amt").value;
   if (!cat || !amt) return;
@@ -1361,6 +1741,15 @@ function renderBills() {
     filtered.map(b => {
       const due = isDueSoon(b), over = isOverdue(b);
       const emiPct = b.totalInstallments && b.completedInstallments !== null ? ((b.completedInstallments||0)/b.totalInstallments*100) : null;
+      const bSplit = SPLITS.find(s => s.billId === b.id);
+      let splitControl;
+      if (bSplit) {
+        const bParts = PARTICIPANTS.filter(p => p.splitId === bSplit.id && !p.isPayer);
+        const bSettled = bParts.filter(p => p.status === "settled").length;
+        splitControl = `<button class="tx-split-badge" onclick="onSplitBillClick(${b.id})">${icon("users",'style="width:9px;height:9px"')} ${bSettled}/${bParts.length}</button>`;
+      } else {
+        splitControl = `<button class="trash-sm-btn" title="Split with friends" onclick="onSplitBillClick(${b.id})">${icon("users",'class="trash-sm"')}</button>`;
+      }
       return `<div class="list-item card-flat" style="display:flex;align-items:center;gap:12px">
         <button onclick="onToggleBillPaid(${b.id})" style="width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${b.isPaid?"var(--green)":over?"var(--red-soft)":"var(--surface-1)"};color:${b.isPaid?"#fff":over?"var(--red)":"var(--text-4)"};border:${b.isPaid?"none":"1.5px solid var(--border)"}">
           ${b.isPaid?icon("check",'style="width:14px;height:14px"'):over?icon("alert-triangle",'style="width:14px;height:14px"'):'<div style="width:12px;height:12px;border-radius:999px;border:2px solid currentColor"></div>'}
@@ -1375,6 +1764,7 @@ function renderBills() {
           ${emiPct!==null?`<div style="margin-top:6px"><div style="font-size:9px;color:var(--text-4)">${b.completedInstallments}/${b.totalInstallments} paid</div><div class="track" style="height:4px;margin-top:2px"><div style="height:100%;background:var(--blue);width:${emiPct}%"></div></div></div>`:""}
         </div>
         <span class="mono" style="font-size:.875rem;font-weight:700">${fmt(parseFloat(b.amount))}</span>
+        ${splitControl}
         <button class="trash-sm-btn" onclick="onDelBill(${b.id})">${icon("trash-2",'class="trash-sm"')}</button>
       </div>`;
     }).join("")}`;
@@ -1570,7 +1960,130 @@ function onSearchInput() {
 /* ══════════════════════════════════════════════
    ADD TRANSACTION MODAL
    ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   SPLIT EXPENSE (inside Add Transaction modal)
+   ══════════════════════════════════════════════ */
+function calcSplitAmounts(total, sp) {
+  total = Math.round((total || 0) * 100) / 100;
+  const friends = FRIENDS.filter(f => sp.friendIds.includes(f.id));
+  const participants = (sp.enabled !== false) ? [{ id:"you", name:"You", isPayer:true }, ...friends.map(f => ({ id:f.id, name:f.name, isPayer:false, color:f.avatarColor }))] : [];
+  const n = participants.length;
+  let amounts = {};
+  if (n > 0) {
+    if (sp.mode === "equal") {
+      const totalCents = Math.round(total * 100);
+      const base = Math.floor(totalCents / n);
+      const leftover = totalCents - base * n;
+      participants.forEach((p, i) => { amounts[p.id] = (base + (i < leftover ? 1 : 0)) / 100; });
+    } else {
+      participants.forEach(p => { amounts[p.id] = parseFloat(sp.exact[p.id]) || 0; });
+    }
+  }
+  const allocated = Math.round(Object.values(amounts).reduce((s,v) => s+v, 0) * 100) / 100;
+  const remaining = Math.round((total - allocated) * 100) / 100;
+  const isBalanced = sp.mode === "equal" || Math.abs(remaining) < 0.01;
+  return { total, participants, amounts, remaining, isBalanced };
+}
+function computeSplitCalc() {
+  const total = parseFloat(document.getElementById("tx-amount").value) || 0;
+  return calcSplitAmounts(total, modalState.split);
+}
+function renderSplitSection() {
+  const container = document.getElementById("split-section");
+  if (!container) return;
+  const sp = modalState.split;
+  if (modalState.type !== "expense") { container.innerHTML = ""; return; }
+  const calc = computeSplitCalc();
+  let html = `<div class="split-card">
+    <div class="split-head-row">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:28px;height:28px;border-radius:999px;background:var(--blue-soft);color:var(--blue);display:flex;align-items:center;justify-content:center">${icon("users",'style="width:14px;height:14px"')}</span>
+        <div>
+          <div style="font-size:.8125rem;font-weight:700">Split this expense</div>
+          <div class="caption">Divide the cost with friends</div>
+        </div>
+      </div>
+      <button class="split-toggle${sp.enabled?" on":""}" onclick="toggleSplitEnabled()"><span class="split-toggle-knob"></span></button>
+    </div>`;
+  if (sp.enabled) {
+    html += `<div class="split-body">
+      <p class="label" style="margin-bottom:8px">Split with</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        ${FRIENDS.map(f => {
+          const sel = sp.friendIds.includes(f.id);
+          return `<button type="button" class="pill friend-chip${sel?" selected":""}" onclick="toggleSplitFriend(${f.id})">
+            <span class="friend-avatar" style="background:${f.avatarColor}">${esc(f.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase())}</span>
+            ${esc(f.name)}${sel?icon("check",'style="width:11px;height:11px"'):""}
+          </button>`;
+        }).join("")}
+        <button type="button" class="pill" onclick="toggleAddFriendInput()">${icon("plus",'style="width:11px;height:11px"')} Add friend</button>
+      </div>
+      ${sp.addingFriend ? `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+        <input class="input" id="new-friend-name" placeholder="Friend's name" onkeydown="if(event.key==='Enter')document.getElementById('new-friend-email').focus();">
+        <input class="input" id="new-friend-email" type="email" placeholder="Email (optional, for notifications)" onkeydown="if(event.key==='Enter')submitNewFriend();">
+        <button class="btn-primary" onclick="submitNewFriend()">Add friend</button>
+      </div>` : ""}
+      <div class="split-mode-tabs">
+        <button class="split-mode-tab${sp.mode==="equal"?" active":""}" onclick="setSplitMode('equal')">Split Equally</button>
+        <button class="split-mode-tab${sp.mode==="exact"?" active":""}" onclick="setSplitMode('exact')">Split Exactly</button>
+      </div>`;
+    if (calc.participants.length > 1) {
+      html += calc.participants.map(p => `<div class="split-participant-row">
+        <span style="font-size:.75rem">${esc(p.name)}${p.isPayer?' <span style="color:var(--text-4);font-size:.625rem">(paid)</span>':""}</span>
+        ${sp.mode === "equal"
+          ? `<span class="mono" style="font-size:.75rem">${fmt(calc.amounts[p.id]||0)}</span>`
+          : `<input type="number" step="0.01" min="0" class="split-exact-input" value="${sp.exact[p.id] ?? (calc.amounts[p.id]||0).toFixed(2)}" oninput="setSplitExactAmount('${p.id}', this.value)">`
+        }
+      </div>`).join("");
+      if (sp.mode === "exact") {
+        const bal = calc.isBalanced;
+        html += `<div class="split-balance-banner" id="split-balance-banner" style="background:${bal?"var(--green-soft)":"var(--red-soft)"};color:${bal?"var(--green)":"var(--red)"}">
+          <span>${bal ? "Amounts match the total" : (calc.remaining>0 ? "Remaining to allocate" : "Over the total by")}</span>
+          ${bal?"":`<span class="mono">${fmt(Math.abs(calc.remaining))}</span>`}
+        </div>`;
+      }
+    } else {
+      html += `<p class="caption" style="text-align:center;padding:14px 0">Pick at least one friend to split with.</p>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+  refreshIcons();
+}
+function toggleSplitEnabled() { modalState.split.enabled = !modalState.split.enabled; renderSplitSection(); }
+function toggleSplitFriend(id) {
+  const sp = modalState.split;
+  sp.friendIds = sp.friendIds.includes(id) ? sp.friendIds.filter(x => x !== id) : [...sp.friendIds, id];
+  delete sp.exact[id];
+  renderSplitSection();
+}
+function setSplitMode(mode) {
+  const sp = modalState.split;
+  if (mode === "exact") { const calc = computeSplitCalc(); calc.participants.forEach(p => { if (sp.exact[p.id] === undefined) sp.exact[p.id] = (calc.amounts[p.id]||0).toFixed(2); }); }
+  sp.mode = mode; renderSplitSection();
+}
+function setSplitExactAmount(id, value) {
+  modalState.split.exact[id] = value;
+  const calc = computeSplitCalc();
+  const banner = document.getElementById("split-balance-banner");
+  if (!banner) return;
+  const bal = calc.isBalanced;
+  banner.style.background = bal ? "var(--green-soft)" : "var(--red-soft)";
+  banner.style.color = bal ? "var(--green)" : "var(--red)";
+  banner.innerHTML = `<span>${bal ? "Amounts match the total" : (calc.remaining>0 ? "Remaining to allocate" : "Over the total by")}</span>${bal?"":`<span class="mono">${fmt(Math.abs(calc.remaining))}</span>`}`;
+}
+function toggleAddFriendInput() { modalState.split.addingFriend = !modalState.split.addingFriend; renderSplitSection(); if (modalState.split.addingFriend) setTimeout(() => document.getElementById("new-friend-name")?.focus(), 0); }
+async function submitNewFriend() {
+  const nameInput = document.getElementById("new-friend-name");
+  const emailInput = document.getElementById("new-friend-email");
+  const name = nameInput.value.trim(); if (!name) return;
+  const f = await addFriend(name, emailInput.value.trim());
+  if (f) { modalState.split.friendIds.push(f.id); modalState.split.addingFriend = false; renderSplitSection(); }
+}
+
 function fillCurrencySelect() { document.getElementById("tx-currency").innerHTML = CURRENCIES.map(c => `<option value="${c.code}">${c.code}</option>`).join(""); }
+
 function fillCategoryGrid() {
   const cats = modalState.type === "income" ? INCOME_CATS : EXPENSE_CATS;
   document.getElementById("cat-grid").innerHTML = cats.map(c => {
@@ -1589,6 +2102,7 @@ function modalSetType(type) {
   document.getElementById("type-income").className = "type-btn" + (type==="income" ? " active-income" : "");
   document.getElementById("tx-submit").textContent = type === "income" ? "Add Income" : "Add Expense";
   fillCategoryGrid();
+  renderSplitSection();
 }
 function modalSelectCategory(key) { modalState.category = key; fillCategoryGrid(); }
 function modalToggleNotes() {
@@ -1602,6 +2116,7 @@ function updateSubmitState() {
 }
 function openModal() {
   modalState.type = "expense"; modalState.category = ""; modalState.extra = false;
+  modalState.split = { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false };
   document.getElementById("tx-amount").value = ""; document.getElementById("tx-desc").value = ""; document.getElementById("tx-notes").value = "";
   document.getElementById("notes-area").classList.remove("open"); document.getElementById("notes-toggle-label").textContent = "Add";
   fillCurrencySelect(); modalSetType("expense");
@@ -1612,12 +2127,22 @@ function closeModal() { document.getElementById("modal-overlay").classList.remov
 async function modalSubmit() {
   const amount = document.getElementById("tx-amount").value, category = modalState.category;
   if (!amount || !category) return;
+  const sp = modalState.split;
+  const calc = computeSplitCalc();
+  const splitReady = sp.enabled && calc.participants.length > 1 && calc.isBalanced;
+  if (sp.enabled && calc.participants.length > 1 && !calc.isBalanced) { alert("Split amounts don't add up to the total yet."); return; }
   const btn = document.getElementById("tx-submit");
   btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<div class="spinner"></div>';
-  await addTransaction({ type: modalState.type, amount, category, description: document.getElementById("tx-desc").value, currency: document.getElementById("tx-currency").value, notes: document.getElementById("tx-notes").value, date: new Date(state.date+"T12:00:00").toISOString() });
+  const txRow = await addTransaction({ type: modalState.type, amount, category, description: document.getElementById("tx-desc").value, currency: document.getElementById("tx-currency").value, notes: document.getElementById("tx-notes").value, date: new Date(state.date+"T12:00:00").toISOString() });
+  if (txRow && splitReady) {
+    await saveSplitForTransaction(txRow.id, {
+      mode: sp.mode, totalAmount: calc.total,
+      participants: calc.participants.map(p => ({ friendId: p.isPayer ? null : p.id, isPayer: p.isPayer, displayName: p.name, amountOwed: calc.amounts[p.id]||0, status: p.isPayer ? "settled" : "pending" })),
+    });
+  }
   closeModal(); btn.innerHTML = orig; renderMain();
 }
-document.addEventListener("input", (e) => { if (e.target && e.target.id === "tx-amount") updateSubmitState(); });
+document.addEventListener("input", (e) => { if (e.target && e.target.id === "tx-amount") { updateSubmitState(); renderSplitSection(); } });
 
 /* ══════════════════════════════════════════════
    THEME
