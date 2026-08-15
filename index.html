@@ -313,6 +313,7 @@ textarea.input { min-height:60px; resize:none; }
     <button class="pill nav-btn" data-tab="manage" onclick="switchTab('manage')"><svg data-lucide="target"></svg><span>Manage</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
     <button class="pill nav-btn" data-tab="ask" onclick="switchTab('ask')"><svg data-lucide="message-circle"></svg><span>Ask</span></button>
+    <button class="pill nav-btn" data-tab="people" onclick="switchTab('people')"><svg data-lucide="user-check"></svg><span>People</span></button>
     <button class="nav-fab" onclick="openModal()"><svg data-lucide="plus" style="width:16px;height:16px"></svg></button>
   </div>
 </nav>
@@ -376,6 +377,24 @@ textarea.input { min-height:60px; resize:none; }
   <div class="modal-inner glass-strong" id="splitwise-hub-inner" style="max-height:80vh"></div>
 </div>
 
+<!-- Add Person -->
+<div class="modal-overlay" id="person-form-overlay" onclick="closePersonForm()"></div>
+<div class="modal-box" id="person-form-box">
+  <div class="modal-inner glass-strong" id="person-form-inner"></div>
+</div>
+
+<!-- Record Payment (quick + other) -->
+<div class="modal-overlay" id="payment-overlay" onclick="closePaymentModal()"></div>
+<div class="modal-box" id="payment-box">
+  <div class="modal-inner glass-strong" id="payment-inner"></div>
+</div>
+
+<!-- Person History -->
+<div class="modal-overlay" id="person-history-overlay" onclick="closePersonHistory()"></div>
+<div class="modal-box" id="person-history-box">
+  <div class="modal-inner glass-strong" id="person-history-inner" style="max-height:80vh"></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -406,6 +425,7 @@ const INCOME_CATS = [
   { key:"investment", label:"Investment", icon:"trending-up", color:"#f59e0b", soft:"rgba(245,158,11,0.10)" },
   { key:"business", label:"Business", icon:"building-2", color:"#0ea5e9", soft:"rgba(14,165,233,0.10)" },
   { key:"gift", label:"Gift", icon:"gift", color:"#f472b6", soft:"rgba(244,114,182,0.10)" },
+  { key:"people_payment", label:"Person Payment", icon:"user-check", color:"#22d3ee", soft:"rgba(34,211,238,0.10)" },
   { key:"other_income", label:"Other", icon:"more-horizontal", color:"#64748b", soft:"rgba(100,116,139,0.10)" },
 ];
 function getCat(key, type) {
@@ -423,13 +443,14 @@ const CAT_SYNONYMS = {
   subscription: ["subscription","subscriptions"],
   emi: ["emi","loan","loans"],
   rent: ["rent"],
-  other_expense: ["misc expenses","other expenses"],
+  other_expense: ["misc expenses","other expenses","misc","miscellaneous","other"],
   salary: ["salary","paycheck","wages"],
   freelance: ["freelance","freelancing","gig work"],
   investment: ["investment","investments","stocks","dividends"],
   business: ["business income","business"],
   gift: ["gift","gifts"],
-  other_income: ["other income"],
+  people_payment: ["person payment","people payment","rent collected","tenant payment"],
+  other_income: ["other income","others","misc income","miscellaneous income","other"],
 };
 const CURRENCIES = [
   { code:"USD", sym:"$" }, { code:"EUR", sym:"€" }, { code:"GBP", sym:"£" }, { code:"INR", sym:"₹" },
@@ -449,6 +470,35 @@ function fmtCompact(n) {
   return `$${n.toFixed(0)}`;
 }
 function dayStr(d) { const dt = d || new Date(); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; }
+function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+function isPersonDueOn(p, ds) {
+  if (!p.active || !p.frequency || !p.startDate) return false;
+  if (ds < p.startDate) return false;
+  const d = new Date(ds+"T12:00:00");
+  const start = new Date(p.startDate+"T12:00:00");
+  switch (p.frequency) {
+    case "daily": return true;
+    case "weekdays": { const dow = d.getDay(); return dow >= 1 && dow <= 5; }
+    case "weekly": return d.getDay() === start.getDay();
+    case "monthly": { const target = Math.min(start.getDate(), daysInMonth(d.getFullYear(), d.getMonth())); return d.getDate() === target; }
+    default: return false;
+  }
+}
+function computeExpectedToday() {
+  const todayStr = dayStr();
+  const due = PEOPLE.filter(p => isPersonDueOn(p, todayStr));
+  const todaysPersonTxs = TXS.filter(t => t.date.slice(0,10) === todayStr && t.personId);
+  const rows = due.map(p => {
+    const tx = todaysPersonTxs.find(t => t.personId === p.id);
+    return { person: p, paid: !!tx, amountPaid: tx ? parseFloat(tx.amount) : 0 };
+  });
+  const expectedTotal = due.reduce((s,p) => s + (parseFloat(p.expectedAmount)||0), 0);
+  const receivedFromDue = rows.filter(r => r.paid).reduce((s,r) => s + r.amountPaid, 0);
+  const receivedTotal = todaysPersonTxs.reduce((s,t) => s + parseFloat(t.amount), 0);
+  const outstanding = Math.max(expectedTotal - receivedFromDue, 0);
+  return { rows, expectedTotal, receivedTotal, outstanding };
+}
+function frequencyLabel(f) { return { daily:"Every day", weekdays:"Weekdays", weekly:"Every week", monthly:"Every month" }[f] || "One-off"; }
 function monthStr(d) { const dt = d || new Date(); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`; }
 function prettyDate(iso) {
   const d = new Date(iso + "T12:00:00"); const today = dayStr();
@@ -466,17 +516,18 @@ const SUPABASE_URL = "https://ylxzgruodlqvpnlauiue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_K2f5GFbZ9xPIGC6tzdwDUw_WG92CcUZ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function mapTx(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", notes:r.notes||"", date:r.date, isRecurring:r.is_recurring, recurringId:r.recurring_id, createdAt:r.created_at }; }
+function mapTx(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", notes:r.notes||"", date:r.date, isRecurring:r.is_recurring, recurringId:r.recurring_id, personId:r.person_id, createdAt:r.created_at }; }
 function mapBudget(r) { return { id:r.id, category:r.category, amount:r.amount, month:r.month }; }
 function mapGoal(r) { return { id:r.id, name:r.name, targetAmount:r.target_amount, currentAmount:r.current_amount, deadline:r.deadline, color:r.color }; }
 function mapBill(r) { return { id:r.id, name:r.name, amount:r.amount, currency:r.currency, billType:r.bill_type, category:r.category, dueDay:r.due_day, frequency:r.frequency, isPaid:r.is_paid, paidDate:r.paid_date, totalInstallments:r.total_installments, completedInstallments:r.completed_installments, totalLoanAmount:r.total_loan_amount, isActive:r.is_active, nextDue:r.next_due }; }
 function mapRecurring(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", frequency:r.frequency, startDate:r.start_date, endDate:r.end_date, nextDue:r.next_due, isActive:r.is_active }; }
 function mapFriend(r) { return { id:r.id, name:r.name, email:r.email||"", avatarColor:r.avatar_color||"#818cf8" }; }
+function mapPerson(r) { return { id:r.id, name:r.name, expectedAmount:r.expected_amount, frequency:r.frequency, startDate:r.start_date, active:r.active, notes:r.notes||"" }; }
 function mapSplit(r) { return { id:r.id, transactionId:r.transaction_id, billId:r.bill_id, paidBy:r.paid_by, splitType:r.split_type, totalAmount:r.total_amount }; }
 function mapParticipant(r) { return { id:r.id, splitId:r.split_id, friendId:r.friend_id, isPayer:r.is_payer, displayName:r.display_name, amountOwed:r.amount_owed, status:r.status, settledAt:r.settled_at }; }
 
 async function loadAllFromSupabase() {
-  const [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes] = await Promise.all([
+  const [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes, peopleRes] = await Promise.all([
     sb.from("transactions").select("*").order("date", { ascending:false }).order("created_at", { ascending:false }),
     sb.from("budgets").select("*"),
     sb.from("goals").select("*").order("created_at", { ascending:true }),
@@ -485,8 +536,9 @@ async function loadAllFromSupabase() {
     sb.from("friends").select("*").order("name", { ascending:true }),
     sb.from("expense_splits").select("*"),
     sb.from("split_participants").select("*"),
+    sb.from("people").select("*").order("name", { ascending:true }),
   ]);
-  [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes].forEach(r => { if (r.error) console.error("Supabase load error:", r.error); });
+  [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes, peopleRes].forEach(r => { if (r.error) console.error("Supabase load error:", r.error); });
   TXS = (txRes.data||[]).map(mapTx);
   BUDGETS = (budRes.data||[]).map(mapBudget);
   GOALS = (goalRes.data||[]).map(mapGoal);
@@ -495,6 +547,7 @@ async function loadAllFromSupabase() {
   FRIENDS = (friendRes.data||[]).map(mapFriend);
   SPLITS = (splitRes.data||[]).map(mapSplit);
   PARTICIPANTS = (partRes.data||[]).map(mapParticipant);
+  PEOPLE = (peopleRes.data||[]).map(mapPerson);
 }
 
 /* ══════════════════════════════════════════════
@@ -511,6 +564,7 @@ let GOALS = [];
 let RECURRING = [];
 let BILLS = [];
 let FRIENDS = [];
+let PEOPLE = [];
 let SPLITS = [];
 let PARTICIPANTS = [];
 let THEME = Store.get("theme", "dark");
@@ -535,7 +589,7 @@ const modalState = { type: "expense", category: "", extra: false, split: { enabl
    CRUD (Supabase-backed)
    ══════════════════════════════════════════════ */
 async function addTransaction(d) {
-  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null };
+  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null, person_id:d.personId||null };
   const { data, error } = await sb.from("transactions").insert(payload).select().single();
   if (error) { alert("Couldn't save transaction: " + error.message); return null; }
   TXS.unshift(mapTx(data));
@@ -560,6 +614,25 @@ async function deleteFriend(id) {
   const { error } = await sb.from("friends").delete().eq("id", id);
   if (error) { alert("Couldn't delete friend: " + error.message); return; }
   FRIENDS = FRIENDS.filter(f => f.id !== id);
+}
+
+async function addPerson(f) {
+  const payload = { name:f.name, expected_amount: f.expectedAmount!=null?parseFloat(f.expectedAmount):null, frequency: f.frequency||null, start_date: f.startDate||null, notes: f.notes||"", active:true };
+  const { data, error } = await sb.from("people").insert(payload).select().single();
+  if (error) { alert("Couldn't add person: " + error.message); return null; }
+  const p = mapPerson(data); PEOPLE.push(p); return p;
+}
+async function togglePersonActive(id) {
+  const p = PEOPLE.find(x => x.id === id); if (!p) return;
+  const { data, error } = await sb.from("people").update({ active: !p.active }).eq("id", id).select().single();
+  if (error) { alert("Couldn't update: " + error.message); return; }
+  Object.assign(p, mapPerson(data));
+}
+async function deletePerson(id) {
+  const { error } = await sb.from("people").delete().eq("id", id);
+  if (error) { alert("Couldn't delete person: " + error.message); return; }
+  PEOPLE = PEOPLE.filter(p => p.id !== id);
+  TXS.forEach(t => { if (t.personId === id) t.personId = null; });
 }
 
 async function saveSplitForTransaction(transactionId, payload) {
@@ -839,6 +912,8 @@ function computeCalendarDays(month) {
 function escapeRegex(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
 function findCategoryMention(q) {
+  const incomeHint = /\b(earn|earned|earning|income|received|receive|got paid|make|made)\b/.test(q);
+  const expenseHint = /\b(spend|spent|spending|cost|paid|pay|bought|buy)\b/.test(q);
   let best = null, bestLen = 0;
   Object.entries(CAT_SYNONYMS).forEach(([key, syns]) => {
     const isIncome = INCOME_CATS.some(c => c.key === key);
@@ -847,7 +922,11 @@ function findCategoryMention(q) {
     if (!catDef) return;
     syns.forEach(syn => {
       const re = new RegExp("\\b" + escapeRegex(syn) + "\\b", "i");
-      if (re.test(q) && syn.length > bestLen) { bestLen = syn.length; best = { key, type: isIncome ? "income" : "expense", label: catDef.label }; }
+      if (!re.test(q)) return;
+      let len = syn.length;
+      if (isIncome && incomeHint && !expenseHint) len += 0.5;
+      if (!isIncome && expenseHint && !incomeHint) len += 0.5;
+      if (len > bestLen) { bestLen = len; best = { key, type: isIncome ? "income" : "expense", label: catDef.label }; }
     });
   });
   return best;
@@ -897,7 +976,32 @@ function answerFinanceQuestion(qRaw) {
       "\u2022 \u201cAm I saving enough?\u201d",
       "\u2022 \u201cWhat bills are due soon?\u201d",
       "\u2022 \u201cWhat's my biggest expense category?\u201d",
+      "\u2022 \u201cGive me my weekly report\u201d",
     ]);
+  }
+
+  if (/weekly report|week in review|how (was|is) my week|this week'?s? report|weekly summary|summary of my week/.test(q)) {
+    const now = new Date();
+    const weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - 6);
+    const inWeek = t => { const d = new Date(t.date); return d >= weekStart && d <= now; };
+    const weekTxs = TXS.filter(inWeek);
+    const inc = totalOf(weekTxs, "income"), exp = totalOf(weekTxs, "expense");
+    const prevStart = new Date(weekStart); prevStart.setDate(prevStart.getDate() - 7);
+    const prevEnd = new Date(weekStart); prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevExp = TXS.filter(t => { const d = new Date(t.date); return d >= prevStart && d <= prevEnd; }).filter(t => t.type === "expense").reduce((s,t) => s+parseFloat(t.amount), 0);
+    const catMap = {};
+    weekTxs.filter(t => t.type === "expense").forEach(t => { catMap[t.category] = (catMap[t.category]||0) + parseFloat(t.amount); });
+    const topCats = Object.entries(catMap).sort((a,b) => b[1]-a[1]).slice(0,3);
+    const lines = [
+      `<strong>Weekly report</strong> — last 7 days`,
+      `Earned ${fmt(inc)}, spent ${fmt(exp)} — net ${fmt(inc-exp)}, across ${weekTxs.length} transaction${weekTxs.length!==1?"s":""}.`,
+    ];
+    if (prevExp > 0) {
+      const diff = exp - prevExp, pct = diff/prevExp*100;
+      lines.push(`That's ${diff>=0?"up":"down"} ${Math.abs(pct).toFixed(0)}% in spending compared to the week before.`);
+    }
+    lines.push(topCats.length ? `Top categories: ${topCats.map(([k,v]) => `${esc(getCat(k,"expense").label)} (${fmt(v)})`).join(", ")}.` : `No expenses logged this week.`);
+    return cbLines(lines);
   }
 
   if (/\bvs\b|\bcompared?\s+to\b|more than last|less than last/.test(q)) {
@@ -1034,12 +1138,271 @@ function answerFinanceQuestion(qRaw) {
     return cbLine(`Net for ${P.label}: <strong>${fmt(inc-exp)}</strong> (earned ${fmt(inc)}, spent ${fmt(exp)}).`);
   }
 
+  // Smarter fallback: if a category or period was picked up but no specific intent
+  // matched, still surface something useful rather than a dead end.
+  if (cat) {
+    const txs = periodTxs.filter(t => t.category === cat.key);
+    const total = txs.reduce((s,t) => s+parseFloat(t.amount), 0);
+    return cbLines([
+      `Not sure exactly what you're asking, but here's ${esc(cat.label)} for ${P.label}: <strong>${fmt(total)}</strong> across ${txs.length} transaction${txs.length!==1?"s":""}.`,
+      `Try being more specific, e.g. "how much did I ${cat.type==="income"?"earn":"spend"} on ${cat.label.toLowerCase()}?"`,
+    ]);
+  }
+  const fallbackInc = totalOf(periodTxs, "income"), fallbackExp = totalOf(periodTxs, "expense");
   return cbLines([
-    "I couldn't quite parse that \u2014 try mentioning a category, a time period, or ask things like:",
+    `I couldn't quite tell what you meant, but here's a quick snapshot for ${P.label}: earned ${fmt(fallbackInc)}, spent ${fmt(fallbackExp)}, net ${fmt(fallbackInc-fallbackExp)}.`,
+    "Try mentioning a category, a time period, or ask things like:",
     "\u2022 \u201cHow much did I spend on transport last month?\u201d",
     "\u2022 \u201cAm I over budget on food?\u201d",
     "\u2022 \u201cWhat's my biggest expense category?\u201d",
+    "\u2022 \u201cGive me my weekly report\u201d",
   ]);
+}
+
+/* ══════════════════════════════════════════════
+   ICONS HELPER
+   ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   RENDER: PEOPLE
+   ══════════════════════════════════════════════ */
+function renderPeople() {
+  const exp = computeExpectedToday();
+  const dateLabel = new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+  const activePeople = PEOPLE.filter(p => p.active);
+  const inactivePeople = PEOPLE.filter(p => !p.active);
+  const lastPaymentFor = (personId) => TXS.filter(t => t.personId === personId).sort((a,b) => new Date(b.date) - new Date(a.date))[0] || null;
+
+  return `
+  <div style="margin-bottom:16px">
+    <p class="label">People</p>
+    <h2 class="heading-lg" style="margin-top:4px">${dateLabel}</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+      <div><div class="caption">Received</div><div class="mono" style="font-size:1.05rem;font-weight:700;color:var(--green);margin-top:2px">${fmt(exp.receivedTotal)}</div></div>
+      <div><div class="caption">Expected</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px">${fmt(exp.expectedTotal)}</div></div>
+      <div><div class="caption">Outstanding</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px;color:${exp.outstanding>0?"var(--red)":"var(--green)"}">${fmt(exp.outstanding)}</div></div>
+    </div>
+  </div>
+
+  <p class="label" style="margin-bottom:8px">Expected today</p>
+  ${exp.rows.length === 0 ? `<p class="caption" style="padding:4px 0 20px">No one is scheduled to pay today.</p>` :
+    exp.rows.map(r => `<div class="list-item card-flat" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="${r.paid ? `openPersonHistory(${r.person.id})` : `openQuickPayment(${r.person.id})`}">
+      <span style="font-size:.8125rem;font-weight:700">${esc(r.person.name)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="mono" style="font-size:.8125rem">${fmt(r.paid ? r.amountPaid : (parseFloat(r.person.expectedAmount)||0))}</span>
+        <span style="color:${r.paid?"var(--green)":"var(--text-4)"};display:flex">${r.paid?icon("check-circle",'style="width:16px;height:16px"'):icon("circle",'style="width:16px;height:16px"')}</span>
+      </div>
+    </div>`).join("")}
+
+  <button class="btn-primary" style="margin:14px 0 24px" onclick="openOtherPaymentModal()">${icon("plus",'style="width:13px;height:13px"')} Record payment</button>
+
+  <p class="label" style="margin-bottom:8px">All people</p>
+  ${PEOPLE.length === 0 ? emptyBlock("user-check", "No people yet", "Add someone you collect recurring payments from") :
+    [...activePeople, ...inactivePeople].map(p => {
+      const last = lastPaymentFor(p.id);
+      return `<div class="list-item card-flat" style="display:flex;align-items:center;gap:12px;${p.active?"":"opacity:.5"}">
+        <div style="flex:1;min-width:0;cursor:pointer" onclick="openPersonHistory(${p.id})">
+          <div style="font-size:.8125rem;font-weight:700">${esc(p.name)}${p.active?"":' <span style="color:var(--text-4);font-size:.625rem;font-weight:600">(inactive)</span>'}</div>
+          <div class="caption">${p.expectedAmount!=null?fmt(parseFloat(p.expectedAmount))+" · "+frequencyLabel(p.frequency):"No schedule"}${last?` · last paid ${prettyDate(last.date.slice(0,10))}`:""}</div>
+        </div>
+        <button class="trash-sm-btn" onclick="onDelPerson(${p.id})">${icon("trash-2",'class="trash-sm"')}</button>
+      </div>`;
+    }).join("")}
+  <button class="btn-primary" style="margin-top:14px;background:var(--surface-2);color:var(--text-1);box-shadow:none" onclick="openPersonForm()">${icon("plus",'style="width:13px;height:13px"')} Add person</button>
+  `;
+}
+async function onDelPerson(id) {
+  if (!confirm("Delete this person? Their payment history stays, but will show as unlinked.")) return;
+  await deletePerson(id);
+  renderMain();
+}
+
+/* ── Add Person ── */
+function openPersonForm() {
+  renderPersonForm();
+  document.getElementById("person-form-overlay").classList.add("open");
+  document.getElementById("person-form-box").classList.add("open");
+}
+function closePersonForm() {
+  document.getElementById("person-form-overlay").classList.remove("open");
+  document.getElementById("person-form-box").classList.remove("open");
+}
+function renderPersonForm() {
+  document.getElementById("person-form-inner").innerHTML = `
+    <div class="modal-head">
+      <h2 class="heading-md">Add person</h2>
+      <button class="icon-btn" style="width:32px;height:32px" onclick="closePersonForm()">${icon("x",'style="width:15px;height:15px"')}</button>
+    </div>
+    <p class="label" style="margin-bottom:6px">Name</p>
+    <input class="input" id="person-name" placeholder="John Smith" style="margin-bottom:14px">
+    <p class="label" style="margin-bottom:6px">Expected amount</p>
+    <input class="input" id="person-amount" type="number" step="0.01" min="0" placeholder="50" style="margin-bottom:14px">
+    <p class="label" style="margin-bottom:6px">Frequency</p>
+    <select class="input" id="person-freq" style="margin-bottom:14px">
+      <option value="daily">Every day</option>
+      <option value="weekdays">Weekdays</option>
+      <option value="weekly">Every week</option>
+      <option value="monthly">Every month</option>
+    </select>
+    <p class="label" style="margin-bottom:6px">Starts</p>
+    <input class="input" id="person-start" type="date" value="${dayStr()}" style="margin-bottom:14px">
+    <p class="label" style="margin-bottom:6px">Notes</p>
+    <input class="input" id="person-notes" placeholder="Optional" style="margin-bottom:18px">
+    <button class="btn-primary" onclick="submitPersonForm()">Add person</button>
+  `;
+  refreshIcons();
+}
+async function submitPersonForm() {
+  const name = document.getElementById("person-name").value.trim();
+  const amount = document.getElementById("person-amount").value;
+  const freq = document.getElementById("person-freq").value;
+  const start = document.getElementById("person-start").value;
+  const notes = document.getElementById("person-notes").value;
+  if (!name || !amount || !start) { alert("Name, amount, and start date are required."); return; }
+  const p = await addPerson({ name, expectedAmount:amount, frequency:freq, startDate:start, notes });
+  if (p) { closePersonForm(); renderMain(); }
+}
+
+/* ── Record Payment (quick, for a due person; and "other", for anyone) ── */
+let paymentModalState = null;
+function openQuickPayment(personId) {
+  if (!PEOPLE.find(p => p.id === personId)) return;
+  paymentModalState = { mode:"quick", personId, showMore:false };
+  renderPaymentModal();
+  document.getElementById("payment-overlay").classList.add("open");
+  document.getElementById("payment-box").classList.add("open");
+}
+function openOtherPaymentModal() {
+  paymentModalState = { mode:"other", personId:null, creatingNew:false };
+  renderPaymentModal();
+  document.getElementById("payment-overlay").classList.add("open");
+  document.getElementById("payment-box").classList.add("open");
+}
+function closePaymentModal() {
+  document.getElementById("payment-overlay").classList.remove("open");
+  document.getElementById("payment-box").classList.remove("open");
+  paymentModalState = null;
+}
+function renderPaymentModal() {
+  const st = paymentModalState;
+  let html;
+  if (st.mode === "quick") {
+    const person = PEOPLE.find(p => p.id === st.personId);
+    if (!person) { closePaymentModal(); return; }
+    html = `
+      <div class="modal-head">
+        <h2 class="heading-md">${esc(person.name)}</h2>
+        <button class="icon-btn" style="width:32px;height:32px" onclick="closePaymentModal()">${icon("x",'style="width:15px;height:15px"')}</button>
+      </div>
+      <p class="caption" style="margin-bottom:14px">Expected ${fmt(parseFloat(person.expectedAmount)||0)}</p>
+      <p class="label" style="margin-bottom:6px">Amount received</p>
+      <input class="input" id="pay-amount" type="number" step="0.01" min="0" value="${parseFloat(person.expectedAmount)||0}" style="margin-bottom:14px">
+      ${st.showMore ? `<p class="label" style="margin-bottom:6px">Notes</p><input class="input" id="pay-notes" placeholder="Optional" style="margin-bottom:14px">`
+        : `<button type="button" style="background:none;border:none;padding:0;font-size:.75rem;color:var(--text-3);text-decoration:underline;cursor:pointer;margin-bottom:14px" onclick="paymentModalState.showMore=true;renderPaymentModal();">More options</button>`}
+      <button class="btn-primary" onclick="submitQuickPayment()">${icon("check",'style="width:14px;height:14px"')} Record payment</button>
+    `;
+  } else {
+    const selectedPerson = st.personId ? PEOPLE.find(p => p.id === st.personId) : null;
+    html = `
+      <div class="modal-head">
+        <h2 class="heading-md">Record payment</h2>
+        <button class="icon-btn" style="width:32px;height:32px" onclick="closePaymentModal()">${icon("x",'style="width:15px;height:15px"')}</button>
+      </div>
+      <p class="label" style="margin-bottom:6px">Person</p>
+      ${selectedPerson ? `<div class="split-participant-row" style="margin-bottom:14px">
+          <span style="font-size:.8125rem;font-weight:700">${esc(selectedPerson.name)}</span>
+          <button class="pill" style="padding:3px 10px;font-size:.625rem" onclick="paymentModalState.personId=null;renderPaymentModal();">Change</button>
+        </div>`
+      : st.creatingNew ? `<input class="input" id="pay-new-name" placeholder="New person's name" style="margin-bottom:14px">`
+      : `<input class="input" id="pay-person-search" placeholder="Search people..." oninput="filterPaymentPersonList(this.value)" style="margin-bottom:8px">
+        <div id="pay-person-list" style="max-height:140px;overflow-y:auto;margin-bottom:14px">${paymentPersonListHtml("")}</div>
+        <button type="button" class="pill" style="margin-bottom:14px" onclick="paymentModalState.creatingNew=true;renderPaymentModal();">${icon("plus",'style="width:11px;height:11px"')} Create new person</button>`}
+      <p class="label" style="margin-bottom:6px">Amount</p>
+      <input class="input" id="pay-amount" type="number" step="0.01" min="0" placeholder="0.00" style="margin-bottom:14px">
+      <p class="label" style="margin-bottom:6px">Date</p>
+      <input class="input" id="pay-date" type="date" value="${dayStr()}" style="margin-bottom:14px">
+      <p class="label" style="margin-bottom:6px">Notes</p>
+      <input class="input" id="pay-notes" placeholder="Optional" style="margin-bottom:18px">
+      <button class="btn-primary" onclick="submitOtherPayment()">${icon("check",'style="width:14px;height:14px"')} Record payment</button>
+    `;
+  }
+  document.getElementById("payment-inner").innerHTML = html;
+  refreshIcons();
+}
+function paymentPersonListHtml(q) {
+  const query = q.toLowerCase();
+  const matches = PEOPLE.filter(p => p.active && p.name.toLowerCase().includes(query)).slice(0, 6);
+  if (!matches.length) return `<p class="caption" style="padding:6px 0">No matches.</p>`;
+  return matches.map(p => `<div class="split-participant-row" style="cursor:pointer" onclick="paymentModalState.personId=${p.id};renderPaymentModal();">
+    <span style="font-size:.75rem">${esc(p.name)}</span>
+    ${icon("chevron-right",'style="width:13px;height:13px;color:var(--text-4)"')}
+  </div>`).join("");
+}
+function filterPaymentPersonList(q) { const el = document.getElementById("pay-person-list"); if (el) el.innerHTML = paymentPersonListHtml(q); }
+async function submitQuickPayment() {
+  const person = PEOPLE.find(p => p.id === paymentModalState.personId);
+  const amount = parseFloat(document.getElementById("pay-amount").value);
+  if (!amount || amount <= 0) { alert("Enter an amount."); return; }
+  const notesEl = document.getElementById("pay-notes");
+  await addTransaction({ type:"income", amount, category:"people_payment", description: person.name, notes: notesEl?notesEl.value:"", currency:"USD", date: new Date(dayStr()+"T12:00:00").toISOString(), personId: person.id });
+  closePaymentModal();
+  renderMain();
+}
+async function submitOtherPayment() {
+  const st = paymentModalState;
+  let personId = st.personId, personName = "";
+  if (!personId) {
+    if (st.creatingNew) {
+      const name = document.getElementById("pay-new-name").value.trim();
+      if (!name) { alert("Enter a name."); return; }
+      const p = await addPerson({ name, expectedAmount:null, frequency:null, startDate:null, notes:"" });
+      if (!p) return;
+      personId = p.id; personName = p.name;
+    } else { alert("Pick or create a person first."); return; }
+  } else {
+    personName = PEOPLE.find(p => p.id === personId)?.name || "";
+  }
+  const amount = parseFloat(document.getElementById("pay-amount").value);
+  if (!amount || amount <= 0) { alert("Enter an amount."); return; }
+  const date = document.getElementById("pay-date").value;
+  const notes = document.getElementById("pay-notes").value;
+  await addTransaction({ type:"income", amount, category:"people_payment", description: personName, notes, currency:"USD", date: new Date(date+"T12:00:00").toISOString(), personId });
+  closePaymentModal();
+  renderMain();
+}
+
+/* ── Person History ── */
+function openPersonHistory(personId) {
+  renderPersonHistory(personId);
+  document.getElementById("person-history-overlay").classList.add("open");
+  document.getElementById("person-history-box").classList.add("open");
+}
+function closePersonHistory() {
+  document.getElementById("person-history-overlay").classList.remove("open");
+  document.getElementById("person-history-box").classList.remove("open");
+}
+function renderPersonHistory(personId) {
+  const person = PEOPLE.find(p => p.id === personId);
+  if (!person) { closePersonHistory(); return; }
+  const txs = TXS.filter(t => t.personId === personId).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const total = txs.reduce((s,t) => s + parseFloat(t.amount), 0);
+  document.getElementById("person-history-inner").innerHTML = `
+    <div class="modal-head">
+      <h2 class="heading-md">${esc(person.name)}</h2>
+      <button class="icon-btn" style="width:32px;height:32px" onclick="closePersonHistory()">${icon("x",'style="width:15px;height:15px"')}</button>
+    </div>
+    <p class="caption" style="margin-bottom:2px">${person.expectedAmount!=null?fmt(parseFloat(person.expectedAmount))+" · "+frequencyLabel(person.frequency):"No recurring schedule"}</p>
+    <p class="caption" style="margin-bottom:16px">Total received: <span class="mono" style="color:var(--green);font-weight:700">${fmt(total)}</span> across ${txs.length} payment${txs.length!==1?"s":""}</p>
+    ${txs.length === 0 ? `<p class="caption" style="padding:8px 0">No payments recorded yet.</p>` :
+      txs.map(t => `<div class="split-participant-row">
+        <span style="font-size:.75rem">${prettyDate(t.date.slice(0,10))}${t.notes?` <span style="color:var(--text-4)">· ${esc(t.notes)}</span>`:""}</span>
+        <span class="mono" style="font-size:.75rem;color:var(--green)">${fmt(parseFloat(t.amount))}</span>
+      </div>`).join("")}
+    <button class="btn-primary" style="margin-top:16px" onclick="closePersonHistory();openQuickPayment(${personId})">${icon("plus",'style="width:13px;height:13px"')} Record payment</button>
+  `;
+  refreshIcons();
 }
 
 /* ══════════════════════════════════════════════
@@ -1067,6 +1430,7 @@ function renderMain() {
   else if (state.tab === "manage") el.innerHTML = renderManage();
   else if (state.tab === "tools") el.innerHTML = renderTools();
   else if (state.tab === "ask") el.innerHTML = renderAsk();
+  else if (state.tab === "people") el.innerHTML = renderPeople();
   el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in");
   refreshIcons();
 }
@@ -1122,7 +1486,7 @@ function clearChat() {
 function buildChatSuggestions() {
   const el = document.getElementById("chat-suggest");
   if (!el) return;
-  const s = ["How much did I spend this month?", "What's my biggest expense category?", "Am I saving enough?"];
+  const s = ["Give me my weekly report", "How much did I spend this month?", "What's my biggest expense category?", "Am I saving enough?"];
   if (BUDGETS.some(b => b.month === monthStr(new Date()))) s.push("Am I over budget?");
   if (GOALS.length) s.push(`How's my ${GOALS[0].name} goal going?`);
   if (BILLS.some(b => b.isActive && !b.isPaid)) s.push("What bills are due soon?");
