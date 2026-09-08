@@ -349,6 +349,7 @@ textarea.input { min-height:60px; resize:none; }
     </div>
     <p class="label" style="margin-bottom:8px">Category</p>
     <div class="cat-grid" id="cat-grid"></div>
+    <div id="payment-method-section"></div>
     <input class="input" id="tx-desc" placeholder="Description (optional)" style="margin-bottom:12px">
     <div id="split-section"></div>
     <button class="notes-toggle" onclick="modalToggleNotes()"><svg data-lucide="sticky-note"></svg> <span id="notes-toggle-label">Add</span> notes</button>
@@ -516,7 +517,7 @@ const SUPABASE_URL = "https://ylxzgruodlqvpnlauiue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_K2f5GFbZ9xPIGC6tzdwDUw_WG92CcUZ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function mapTx(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", notes:r.notes||"", date:r.date, isRecurring:r.is_recurring, recurringId:r.recurring_id, personId:r.person_id, createdAt:r.created_at }; }
+function mapTx(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", notes:r.notes||"", date:r.date, isRecurring:r.is_recurring, recurringId:r.recurring_id, personId:r.person_id, paymentMethod:r.payment_method||"", createdAt:r.created_at }; }
 function mapBudget(r) { return { id:r.id, category:r.category, amount:r.amount, month:r.month }; }
 function mapGoal(r) { return { id:r.id, name:r.name, targetAmount:r.target_amount, currentAmount:r.current_amount, deadline:r.deadline, color:r.color }; }
 function mapBill(r) { return { id:r.id, name:r.name, amount:r.amount, currency:r.currency, billType:r.bill_type, category:r.category, dueDay:r.due_day, frequency:r.frequency, isPaid:r.is_paid, paidDate:r.paid_date, totalInstallments:r.total_installments, completedInstallments:r.completed_installments, totalLoanAmount:r.total_loan_amount, isActive:r.is_active, nextDue:r.next_due }; }
@@ -583,13 +584,13 @@ const state = {
   donutMode: "day",
   donutCursor: new Date(),
 };
-const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false } };
+const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false }, paymentMethod: { mode:null, custom:"" } };
 
 /* ══════════════════════════════════════════════
    CRUD (Supabase-backed)
    ══════════════════════════════════════════════ */
 async function addTransaction(d) {
-  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null, person_id:d.personId||null };
+  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null, person_id:d.personId||null, payment_method:d.paymentMethod||null };
   const { data, error } = await sb.from("transactions").insert(payload).select().single();
   if (error) { alert("Couldn't save transaction: " + error.message); return null; }
   TXS.unshift(mapTx(data));
@@ -774,11 +775,12 @@ function buildDoughnutSVG(slices, total) {
   </svg>`;
 }
 
-function computeSummary({ date, month, year }) {
+function computeSummary({ date, month, year, start, end }) {
   let filtered = TXS;
   if (date) filtered = TXS.filter(t => t.date.slice(0,10) === date);
   else if (month) filtered = TXS.filter(t => t.date.slice(0,7) === month);
   else if (year) filtered = TXS.filter(t => t.date.slice(0,4) === year);
+  else if (start && end) filtered = TXS.filter(t => { const d = t.date.slice(0,10); return d >= start && d <= end; });
   const inc = filtered.filter(t => t.type === "income");
   const exp = filtered.filter(t => t.type === "expense");
   const totalIncome = inc.reduce((s,t) => s + parseFloat(t.amount), 0);
@@ -978,6 +980,19 @@ function answerFinanceQuestion(qRaw) {
       "\u2022 \u201cWhat's my biggest expense category?\u201d",
       "\u2022 \u201cGive me my weekly report\u201d",
     ]);
+  }
+
+  if (/\b(cash|in cash)\b/.test(q) && !/cashflow/.test(q) && /(spend|spent|expense|paid|how much)/.test(q)) {
+    const txs = periodTxs.filter(t => t.type === "expense" && (t.paymentMethod||"").toLowerCase() === "cash");
+    if (!txs.length) return cbLine(`No expenses logged as paid in cash for ${P.label}.`);
+    const total = txs.reduce((s,t) => s+parseFloat(t.amount), 0);
+    return cbLine(`You spent <strong>${fmt(total)}</strong> in cash for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category expenses.)`);
+  }
+  if (/\bonline\b/.test(q) && /(spend|spent|expense|paid|how much)/.test(q)) {
+    const txs = periodTxs.filter(t => t.type === "expense" && (t.paymentMethod||"").toLowerCase() === "online");
+    if (!txs.length) return cbLine(`No expenses logged as paid online for ${P.label}.`);
+    const total = txs.reduce((s,t) => s+parseFloat(t.amount), 0);
+    return cbLine(`You spent <strong>${fmt(total)}</strong> online for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category expenses.)`);
   }
 
   if (/weekly report|week in review|how (was|is) my week|this week'?s? report|weekly summary|summary of my week/.test(q)) {
@@ -1519,7 +1534,7 @@ function txRowHtml(t) {
     </div>
     <div class="tx-main">
       <div class="tx-title">${esc(t.description || cat.label)} ${t.notes ? '<span style="opacity:.4">•</span>' : ""}</div>
-      <div class="tx-meta"><span>${esc(cat.label)}</span><span>·</span><span>${time}</span>${t.isRecurring ? '<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--blue-soft);color:var(--blue)">AUTO</span>' : ""}${splitBadge}</div>
+      <div class="tx-meta"><span>${esc(cat.label)}</span><span>·</span><span>${time}</span>${t.paymentMethod?`<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--surface-2);color:var(--text-3)">${esc(t.paymentMethod.toUpperCase())}</span>`:""}${t.isRecurring ? '<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--blue-soft);color:var(--blue)">AUTO</span>' : ""}${splitBadge}</div>
     </div>
     <span class="tx-amt" style="color:${isInc ? "var(--green)" : "var(--red)"}">${isInc?"+":"-"}${fmt(amt, t.currency)}</span>
     <button class="tx-del" onclick="onDeleteTx(${t.id})">${icon("trash-2")}</button>
@@ -1804,6 +1819,14 @@ function renderStory() {
     donutSummaryArg = { date: ds };
     donutPeriodLabel = ds === dayStr() ? "Today" : donutCursor.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
     donutCenterLabel = "spent this day"; donutLossLabel = "today";
+  } else if (donutMode === "week") {
+    const wEnd = new Date(donutCursor);
+    const wStart = new Date(donutCursor); wStart.setDate(wStart.getDate() - 6);
+    donutSummaryArg = { start: dayStr(wStart), end: dayStr(wEnd) };
+    donutPeriodLabel = dayStr(wEnd) === dayStr()
+      ? "This week"
+      : `${wStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})} \u2013 ${wEnd.toLocaleDateString("en-US",{month:"short",day:"numeric"})}`;
+    donutCenterLabel = "spent this week"; donutLossLabel = "this week";
   } else if (donutMode === "year") {
     donutSummaryArg = { year: String(donutCursor.getFullYear()) };
     donutPeriodLabel = String(donutCursor.getFullYear());
@@ -1826,7 +1849,7 @@ function renderStory() {
   let donutCard = `<div class="card chart-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="label">Category-Wise Expense & Savings</p>
-      <div style="display:flex;gap:4px">${donutModeBtn("day","Day")}${donutModeBtn("month","Month")}${donutModeBtn("year","Year")}${donutModeBtn("all","All time")}</div>
+      <div style="display:flex;gap:4px">${donutModeBtn("day","Day")}${donutModeBtn("week","Week")}${donutModeBtn("month","Month")}${donutModeBtn("year","Year")}${donutModeBtn("all","All time")}</div>
     </div>
     ${donutMode !== "all" ? `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
       <button onclick="donutPrev()">${icon("chevron-left",'style="width:14px;height:14px;color:var(--text-3)"')}</button>
@@ -2022,8 +2045,8 @@ function renderBudgets() {
 function budPrev() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()-1); state.budCursor = d; renderMain(); }
 function budNext() { const d = new Date(state.budCursor); d.setMonth(d.getMonth()+1); state.budCursor = d; renderMain(); }
 function setDonutMode(mode) { state.donutMode = mode; renderMain(); }
-function donutPrev() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()-1); else if (state.donutMode === "day") d.setDate(d.getDate()-1); else d.setMonth(d.getMonth()-1); state.donutCursor = d; renderMain(); }
-function donutNext() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()+1); else if (state.donutMode === "day") d.setDate(d.getDate()+1); else d.setMonth(d.getMonth()+1); if (state.donutMode !== "day" || d <= new Date()) { state.donutCursor = d; renderMain(); } }
+function donutPrev() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()-1); else if (state.donutMode === "day") d.setDate(d.getDate()-1); else if (state.donutMode === "week") d.setDate(d.getDate()-7); else d.setMonth(d.getMonth()-1); state.donutCursor = d; renderMain(); }
+function donutNext() { const d = new Date(state.donutCursor); if (state.donutMode === "year") d.setFullYear(d.getFullYear()+1); else if (state.donutMode === "day") d.setDate(d.getDate()+1); else if (state.donutMode === "week") d.setDate(d.getDate()+7); else d.setMonth(d.getMonth()+1); const capped = state.donutMode === "day" || state.donutMode === "week"; if (!capped || d <= new Date()) { state.donutCursor = d; renderMain(); } }
 async function submitBudget() {
   const cat = document.getElementById("bud-cat").value, amt = document.getElementById("bud-amt").value;
   if (!cat || !amt) return;
@@ -2461,26 +2484,64 @@ function fillCategoryGrid() {
   updateSubmitState();
 }
 function modalSetType(type) {
-  modalState.type = type; modalState.category = "";
+  modalState.type = type; modalState.category = ""; modalState.paymentMethod = { mode:null, custom:"" };
   document.getElementById("type-expense").className = "type-btn" + (type==="expense" ? " active-expense" : "");
   document.getElementById("type-income").className = "type-btn" + (type==="income" ? " active-income" : "");
   document.getElementById("tx-submit").textContent = type === "income" ? "Add Income" : "Add Expense";
   fillCategoryGrid();
+  renderPaymentMethodSection();
   renderSplitSection();
 }
-function modalSelectCategory(key) { modalState.category = key; fillCategoryGrid(); }
+function modalSelectCategory(key) {
+  modalState.category = key;
+  if (key !== "other_expense") modalState.paymentMethod = { mode:null, custom:"" };
+  fillCategoryGrid();
+  renderPaymentMethodSection();
+}
+function renderPaymentMethodSection() {
+  const el = document.getElementById("payment-method-section");
+  if (!el) return;
+  if (modalState.category !== "other_expense") { el.innerHTML = ""; return; }
+  const pm = modalState.paymentMethod;
+  const btn = (mode, label) => `<button type="button" class="pill${pm.mode===mode?" active":""}" onclick="setPaymentMethodMode('${mode}')">${esc(label)}</button>`;
+  el.innerHTML = `
+    <p class="label" style="margin-bottom:8px">Payment method</p>
+    <div style="display:flex;gap:6px;margin-bottom:${pm.mode==="custom"?"8px":"12px"}">
+      ${btn("cash","Cash")}${btn("online","Online")}${btn("custom","Other")}
+    </div>
+    ${pm.mode==="custom" ? `<input class="input" id="payment-custom-input" placeholder="e.g. Cheque, Barter..." value="${esc(pm.custom)}" oninput="modalState.paymentMethod.custom=this.value;updateSubmitState();" style="margin-bottom:12px">` : ""}
+  `;
+  refreshIcons();
+  updateSubmitState();
+}
+function setPaymentMethodMode(mode) { modalState.paymentMethod.mode = mode; renderPaymentMethodSection(); }
 function modalToggleNotes() {
   modalState.extra = !modalState.extra;
   document.getElementById("notes-area").classList.toggle("open", modalState.extra);
   document.getElementById("notes-toggle-label").textContent = modalState.extra ? "Hide" : "Add";
 }
+function paymentMethodValid() {
+  if (modalState.category !== "other_expense") return true;
+  const pm = modalState.paymentMethod;
+  if (!pm.mode) return false;
+  if (pm.mode === "custom" && !pm.custom.trim()) return false;
+  return true;
+}
+function resolvedPaymentMethod() {
+  const pm = modalState.paymentMethod;
+  if (pm.mode === "cash") return "Cash";
+  if (pm.mode === "online") return "Online";
+  if (pm.mode === "custom") return pm.custom.trim();
+  return null;
+}
 function updateSubmitState() {
   const amt = document.getElementById("tx-amount").value;
-  document.getElementById("tx-submit").disabled = !amt || !modalState.category;
+  document.getElementById("tx-submit").disabled = !amt || !modalState.category || !paymentMethodValid();
 }
 function openModal() {
   modalState.type = "expense"; modalState.category = ""; modalState.extra = false;
   modalState.split = { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false };
+  modalState.paymentMethod = { mode:null, custom:"" };
   document.getElementById("tx-amount").value = ""; document.getElementById("tx-desc").value = ""; document.getElementById("tx-notes").value = "";
   document.getElementById("notes-area").classList.remove("open"); document.getElementById("notes-toggle-label").textContent = "Add";
   fillCurrencySelect(); modalSetType("expense");
@@ -2491,13 +2552,14 @@ function closeModal() { document.getElementById("modal-overlay").classList.remov
 async function modalSubmit() {
   const amount = document.getElementById("tx-amount").value, category = modalState.category;
   if (!amount || !category) return;
+  if (!paymentMethodValid()) { alert("Pick a payment method first."); return; }
   const sp = modalState.split;
   const calc = computeSplitCalc();
   const splitReady = sp.enabled && calc.participants.length > 1 && calc.isBalanced;
   if (sp.enabled && calc.participants.length > 1 && !calc.isBalanced) { alert("Split amounts don't add up to the total yet."); return; }
   const btn = document.getElementById("tx-submit");
   btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = '<div class="spinner"></div>';
-  const txRow = await addTransaction({ type: modalState.type, amount, category, description: document.getElementById("tx-desc").value, currency: document.getElementById("tx-currency").value, notes: document.getElementById("tx-notes").value, date: new Date(state.date+"T12:00:00").toISOString() });
+  const txRow = await addTransaction({ type: modalState.type, amount, category, description: document.getElementById("tx-desc").value, currency: document.getElementById("tx-currency").value, notes: document.getElementById("tx-notes").value, date: new Date(state.date+"T12:00:00").toISOString(), paymentMethod: resolvedPaymentMethod() });
   if (txRow && splitReady) {
     await saveSplitForTransaction(txRow.id, {
       mode: sp.mode, totalAmount: calc.total,
