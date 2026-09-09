@@ -982,17 +982,23 @@ function answerFinanceQuestion(qRaw) {
     ]);
   }
 
-  if (/\b(cash|in cash)\b/.test(q) && !/cashflow/.test(q) && /(spend|spent|expense|paid|how much)/.test(q)) {
-    const txs = periodTxs.filter(t => t.type === "expense" && (t.paymentMethod||"").toLowerCase() === "cash");
-    if (!txs.length) return cbLine(`No expenses logged as paid in cash for ${P.label}.`);
+  if (/\b(cash|in cash)\b/.test(q) && !/cashflow/.test(q) && /(spend|spent|expense|paid|earn|earned|receive|received|income|how much)/.test(q)) {
+    const wantsIncome = /\b(earn|earned|receive|received|income|made)\b/.test(q);
+    const wantsExpense = /\b(spend|spent|expense|paid|cost)\b/.test(q);
+    const type = wantsIncome && !wantsExpense ? "income" : "expense";
+    const txs = periodTxs.filter(t => t.type === type && (t.paymentMethod||"").toLowerCase() === "cash");
+    if (!txs.length) return cbLine(`No ${type === "income" ? "income" : "expenses"} logged as ${type === "income" ? "received" : "paid"} in cash for ${P.label}.`);
     const total = txs.reduce((s,t) => s+parseFloat(t.amount), 0);
-    return cbLine(`You spent <strong>${fmt(total)}</strong> in cash for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category expenses.)`);
+    return cbLine(`You ${type === "income" ? "received" : "spent"} <strong>${fmt(total)}</strong> in cash for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category ${type}.)`);
   }
-  if (/\bonline\b/.test(q) && /(spend|spent|expense|paid|how much)/.test(q)) {
-    const txs = periodTxs.filter(t => t.type === "expense" && (t.paymentMethod||"").toLowerCase() === "online");
-    if (!txs.length) return cbLine(`No expenses logged as paid online for ${P.label}.`);
+  if (/\bonline\b/.test(q) && /(spend|spent|expense|paid|earn|earned|receive|received|income|how much)/.test(q)) {
+    const wantsIncome = /\b(earn|earned|receive|received|income|made)\b/.test(q);
+    const wantsExpense = /\b(spend|spent|expense|paid|cost)\b/.test(q);
+    const type = wantsIncome && !wantsExpense ? "income" : "expense";
+    const txs = periodTxs.filter(t => t.type === type && (t.paymentMethod||"").toLowerCase() === "online");
+    if (!txs.length) return cbLine(`No ${type === "income" ? "income" : "expenses"} logged as ${type === "income" ? "received" : "paid"} online for ${P.label}.`);
     const total = txs.reduce((s,t) => s+parseFloat(t.amount), 0);
-    return cbLine(`You spent <strong>${fmt(total)}</strong> online for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category expenses.)`);
+    return cbLine(`You ${type === "income" ? "received" : "spent"} <strong>${fmt(total)}</strong> online for ${P.label}, across ${txs.length} transaction${txs.length!==1?"s":""}. (Only tracked for "Other" category ${type}.)`);
   }
 
   if (/weekly report|week in review|how (was|is) my week|this week'?s? report|weekly summary|summary of my week/.test(q)) {
@@ -2492,16 +2498,17 @@ function modalSetType(type) {
   renderPaymentMethodSection();
   renderSplitSection();
 }
+function isOtherCategory(key) { return key === "other_expense" || key === "other_income"; }
 function modalSelectCategory(key) {
   modalState.category = key;
-  if (key !== "other_expense") modalState.paymentMethod = { mode:null, custom:"" };
+  if (!isOtherCategory(key)) modalState.paymentMethod = { mode:null, custom:"" };
   fillCategoryGrid();
   renderPaymentMethodSection();
 }
 function renderPaymentMethodSection() {
   const el = document.getElementById("payment-method-section");
   if (!el) return;
-  if (modalState.category !== "other_expense") { el.innerHTML = ""; return; }
+  if (!isOtherCategory(modalState.category)) { el.innerHTML = ""; return; }
   const pm = modalState.paymentMethod;
   const btn = (mode, label) => `<button type="button" class="pill${pm.mode===mode?" active":""}" onclick="setPaymentMethodMode('${mode}')">${esc(label)}</button>`;
   el.innerHTML = `
@@ -2521,7 +2528,7 @@ function modalToggleNotes() {
   document.getElementById("notes-toggle-label").textContent = modalState.extra ? "Hide" : "Add";
 }
 function paymentMethodValid() {
-  if (modalState.category !== "other_expense") return true;
+  if (!isOtherCategory(modalState.category)) return true;
   const pm = modalState.paymentMethod;
   if (!pm.mode) return false;
   if (pm.mode === "custom" && !pm.custom.trim()) return false;
