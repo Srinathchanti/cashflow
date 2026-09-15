@@ -2071,6 +2071,7 @@ function generateDailyInsights() {
    ══════════════════════════════════════════════ */
 function renderDashboard() {
   const health = computeFinancialHealthScore();
+  const trend = computeHealthTrend();
   const insights = generateInsights();
   const now = new Date();
   const thisM = monthStr(now);
