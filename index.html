@@ -602,6 +602,7 @@ const state = {
   donutCursor: new Date(),
   exportType: "all",
   exportPreset: "month",
+  dayDetailOpen: false,
 };
 const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false }, paymentMethod: { mode:null, custom:"" } };
 
@@ -1607,7 +1608,7 @@ function txRowHtml(t) {
     <button class="tx-del" onclick="onDeleteTx(${t.id})">${icon("trash-2")}</button>
   </div>`;
 }
-async function onDeleteTx(id) { await deleteTransaction(id); renderMain(); }
+async function onDeleteTx(id) { if (!confirm("Delete this transaction?")) return; await deleteTransaction(id); renderMain(); }
 
 function openSplitDetail(txId) {
   const split = SPLITS.find(s => s.transactionId === txId);
@@ -2095,6 +2096,18 @@ function renderDashboard() {
     <h2 class="heading-lg" style="margin-top:4px">${fmt(balance)}</h2>
   </div>
 
+  <button class="card card-flat" style="width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;cursor:pointer" onclick="goToTodayDetail()">
+    <div>
+      <div class="caption">Today</div>
+      <div class="mono" style="font-size:1rem;font-weight:700;margin-top:2px">
+        <span style="color:var(--green)">+${fmt(TXS.filter(t=>t.date.slice(0,10)===dayStr()&&t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0))}</span>
+        <span style="color:var(--text-3);margin:0 4px">·</span>
+        <span style="color:var(--red)">-${fmt(TXS.filter(t=>t.date.slice(0,10)===dayStr()&&t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0))}</span>
+      </div>
+    </div>
+    <span style="color:var(--text-3)">${icon("chevron-right",'style="width:16px;height:16px"')}</span>
+  </button>
+
   <div class="card" style="margin-bottom:16px">
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
       <div><div class="caption">Safe to spend (this month)</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px;color:${(income-expense)>=0?"var(--green)":"var(--red)"}">${fmt(income-expense)}</div></div>
@@ -2320,6 +2333,7 @@ function storyNext() { const d = new Date(state.date+"T12:00:00"); d.setDate(d.g
    RENDER: CALENDAR TAB
    ══════════════════════════════════════════════ */
 function renderCalendar() {
+  if (state.dayDetailOpen) return renderDayDetail();
   const cur = state.calCursor;
   const ms = monthStr(cur);
   const days = computeCalendarDays(ms);
@@ -2354,7 +2368,49 @@ function renderCalendar() {
 }
 function calPrev() { const d = new Date(state.calCursor); d.setMonth(d.getMonth()-1); state.calCursor = d; renderMain(); }
 function calNext() { const d = new Date(state.calCursor); d.setMonth(d.getMonth()+1); state.calCursor = d; renderMain(); }
-function calSelect(ds) { state.date = ds; switchTab("story"); }
+function calSelect(ds) { state.date = ds; state.dayDetailOpen = true; renderMain(); }
+function calBackToGrid() { state.dayDetailOpen = false; renderMain(); }
+function goToTodayDetail() { state.date = dayStr(); state.dayDetailOpen = true; state.calCursor = new Date(); switchTab("calendar"); }
+function dayShiftDetail(delta) {
+  const d = new Date(state.date+"T12:00:00"); d.setDate(d.getDate()+delta);
+  state.date = dayStr(d); renderMain();
+}
+function renderDayDetail() {
+  const ds = state.date;
+  const dayTxs = TXS.filter(t => t.date.slice(0,10) === ds).sort((a,b) => new Date(b.date)-new Date(a.date));
+  const income = dayTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = dayTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const dateObj = new Date(ds+"T12:00:00");
+  const isToday = ds === dayStr();
+  return `
+  <div class="date-nav" style="margin-bottom:14px">
+    <button class="icon-btn" onclick="calBackToGrid()">${icon("chevron-left")}</button>
+    <span style="font-weight:700;font-size:.875rem">${isToday ? "Today" : dateObj.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</span>
+    <button class="icon-btn" onclick="dayShiftDetail(1)">${icon("chevron-right")}</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+      <div><div class="caption" style="color:var(--green)">Earned</div><div class="mono" style="font-size:1.1rem;font-weight:800;margin-top:2px;color:var(--green)">${fmt(income)}</div></div>
+      <div><div class="caption" style="color:var(--red)">Spent</div><div class="mono" style="font-size:1.1rem;font-weight:800;margin-top:2px;color:var(--red)">${fmt(expense)}</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <p class="label">Transactions — ${dayTxs.length}</p>
+    <button class="pill" style="padding:6px 14px;font-size:.75rem" onclick="openModal()">${icon("plus",'style="width:12px;height:12px"')} Add</button>
+  </div>
+  ${dayTxs.length === 0 ? emptyBlock("calendar", "Nothing logged this day", "Add an expense or income for this date") :
+    dayTxs.map(t => `<div class="list-item card-flat" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.8125rem;font-weight:700">${esc(t.description || getCat(t.category,t.type).label)}</div>
+        <div class="caption" style="margin-top:1px">${esc(getCat(t.category,t.type).label)}</div>
+      </div>
+      <span class="mono" style="font-size:.8125rem;font-weight:700;margin-right:10px;color:${t.type==="income"?"var(--green)":"var(--red)"}">${t.type==="income"?"+":"-"}${fmt(parseFloat(t.amount))}</span>
+      <button class="icon-btn" style="width:30px;height:30px" onclick="onDeleteTx(${t.id})">${icon("trash-2",'style="width:14px;height:14px;color:var(--red)"')}</button>
+    </div>`).join("")}
+  `;
+}
 
 /* ══════════════════════════════════════════════
    RENDER: MANAGE TAB
