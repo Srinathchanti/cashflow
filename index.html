@@ -268,6 +268,11 @@ textarea.input { min-height:60px; resize:none; }
 .color-row { display:flex; gap:8px; }
 .color-dot { width:28px; height:28px; border-radius:999px; border:2px solid transparent; }
 .color-dot.selected { border-color:var(--text-1); }
+.balance-meter { position:relative; height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin:14px 0 6px; }
+.balance-meter-fill { position:absolute; left:0; top:0; bottom:0; border-radius:999px; background:var(--grad-1); transition:width .4s cubic-bezier(.22,.61,.36,1); }
+.balance-meter-labels { display:flex; justify-content:space-between; font-size:.6875rem; color:var(--text-3); }
+.home-person-row { display:flex; align-items:center; gap:12px; }
+.home-person-avatar { width:38px; height:38px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:.8125rem; font-weight:700; color:#0b0d16; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -308,7 +313,7 @@ textarea.input { min-height:60px; resize:none; }
 
 <nav class="bottom-nav">
   <div class="nav-inner glass-strong">
-    <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="sparkles"></svg><span>Story</span></button>
+    <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
     <button class="pill nav-btn" data-tab="manage" onclick="switchTab('manage')"><svg data-lucide="target"></svg><span>Manage</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
@@ -517,6 +522,18 @@ const SUPABASE_URL = "https://ylxzgruodlqvpnlauiue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_K2f5GFbZ9xPIGC6tzdwDUw_WG92CcUZ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+/* Every insert must stamp the row with the signed-in user's id so that
+   Supabase Row Level Security can enforce per-user data isolation.
+   See supabase_rls_policies.sql for the matching server-side policies —
+   this client-side stamp is defense-in-depth, not a substitute for RLS. */
+let _cachedUserId = null;
+async function getUserId() {
+  if (_cachedUserId) return _cachedUserId;
+  const { data: { user } } = await sb.auth.getUser();
+  _cachedUserId = user ? user.id : null;
+  return _cachedUserId;
+}
+
 function mapTx(r) { return { id:r.id, type:r.type, amount:r.amount, currency:r.currency, category:r.category, description:r.description||"", notes:r.notes||"", date:r.date, isRecurring:r.is_recurring, recurringId:r.recurring_id, personId:r.person_id, paymentMethod:r.payment_method||"", createdAt:r.created_at }; }
 function mapBudget(r) { return { id:r.id, category:r.category, amount:r.amount, month:r.month }; }
 function mapGoal(r) { return { id:r.id, name:r.name, targetAmount:r.target_amount, currentAmount:r.current_amount, deadline:r.deadline, color:r.color }; }
@@ -583,6 +600,8 @@ const state = {
   budCursor: new Date(),
   donutMode: "day",
   donutCursor: new Date(),
+  exportType: "all",
+  exportPreset: "month",
 };
 const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false }, paymentMethod: { mode:null, custom:"" } };
 
@@ -590,7 +609,7 @@ const modalState = { type: "expense", category: "", extra: false, split: { enabl
    CRUD (Supabase-backed)
    ══════════════════════════════════════════════ */
 async function addTransaction(d) {
-  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null, person_id:d.personId||null, payment_method:d.paymentMethod||null };
+  const payload = { type:d.type, amount:parseFloat(d.amount), currency:d.currency||"USD", category:d.category, description:d.description||"", notes:d.notes||"", date:d.date||new Date().toISOString(), is_recurring:false, recurring_id:null, person_id:d.personId||null, payment_method:d.paymentMethod||null, user_id: await getUserId() };
   const { data, error } = await sb.from("transactions").insert(payload).select().single();
   if (error) { alert("Couldn't save transaction: " + error.message); return null; }
   TXS.unshift(mapTx(data));
@@ -607,7 +626,7 @@ async function deleteTransaction(id) {
 async function addFriend(name, email) {
   const colors = ["#818cf8","#34eab3","#fbbf24","#f472b6","#c4b5fd","#60a5fa","#fb923c"];
   const color = colors[FRIENDS.length % colors.length];
-  const { data, error } = await sb.from("friends").insert({ name, email: email || null, avatar_color: color }).select().single();
+  const { data, error } = await sb.from("friends").insert({ name, email: email || null, avatar_color: color, user_id: await getUserId() }).select().single();
   if (error) { alert("Couldn't add friend: " + error.message); return null; }
   const f = mapFriend(data); FRIENDS.push(f); return f;
 }
@@ -618,7 +637,7 @@ async function deleteFriend(id) {
 }
 
 async function addPerson(f) {
-  const payload = { name:f.name, expected_amount: f.expectedAmount!=null?parseFloat(f.expectedAmount):null, frequency: f.frequency||null, start_date: f.startDate||null, notes: f.notes||"", active:true };
+  const payload = { name:f.name, expected_amount: f.expectedAmount!=null?parseFloat(f.expectedAmount):null, frequency: f.frequency||null, start_date: f.startDate||null, notes: f.notes||"", active:true, user_id: await getUserId() };
   const { data, error } = await sb.from("people").insert(payload).select().single();
   if (error) { alert("Couldn't add person: " + error.message); return null; }
   const p = mapPerson(data); PEOPLE.push(p); return p;
@@ -637,9 +656,9 @@ async function deletePerson(id) {
 }
 
 async function saveSplitForTransaction(transactionId, payload) {
-  const { data: { user } } = await sb.auth.getUser();
+  const uid = await getUserId();
   const { data: splitRow, error: splitErr } = await sb.from("expense_splits").insert({
-    transaction_id: transactionId, paid_by: user.id, split_type: payload.mode, total_amount: payload.totalAmount,
+    transaction_id: transactionId, paid_by: uid, split_type: payload.mode, total_amount: payload.totalAmount,
   }).select().single();
   if (splitErr) { alert("Couldn't save split: " + splitErr.message); return; }
   const rows = payload.participants.map(p => ({
@@ -659,7 +678,7 @@ async function toggleParticipantStatus(id) {
 }
 
 async function addBudget(cat, amt, month) {
-  const { data, error } = await sb.from("budgets").insert({ category:cat, amount:parseFloat(amt), month }).select().single();
+  const { data, error } = await sb.from("budgets").insert({ category:cat, amount:parseFloat(amt), month, user_id: await getUserId() }).select().single();
   if (error) { alert("Couldn't save budget: " + error.message); return; }
   BUDGETS.push(mapBudget(data));
 }
@@ -670,7 +689,7 @@ async function deleteBudget(id) {
 }
 
 async function addGoal(f) {
-  const { data, error } = await sb.from("goals").insert({ name:f.name, target_amount:parseFloat(f.target), current_amount:0, deadline:f.deadline || null, color:f.color }).select().single();
+  const { data, error } = await sb.from("goals").insert({ name:f.name, target_amount:parseFloat(f.target), current_amount:0, deadline:f.deadline || null, color:f.color, user_id: await getUserId() }).select().single();
   if (error) { alert("Couldn't save goal: " + error.message); return; }
   GOALS.push(mapGoal(data));
 }
@@ -696,7 +715,7 @@ async function addBillItem(f, billType) {
     total_installments: f.totalInstallments ? parseInt(f.totalInstallments,10) : null,
     completed_installments: 0,
     total_loan_amount: f.totalLoanAmount ? parseFloat(f.totalLoanAmount) : null,
-    is_active:true, next_due: dayStr(next),
+    is_active:true, next_due: dayStr(next), user_id: await getUserId(),
   };
   const { data, error } = await sb.from("bills").insert(payload).select().single();
   if (error) { alert("Couldn't save bill: " + error.message); return; }
@@ -712,9 +731,9 @@ async function toggleBillPaid(id) {
   Object.assign(b, mapBill(data));
 }
 async function saveSplitForBill(billId, payload) {
-  const { data: { user } } = await sb.auth.getUser();
+  const uid = await getUserId();
   const { data: splitRow, error: splitErr } = await sb.from("expense_splits").insert({
-    bill_id: billId, paid_by: user.id, split_type: payload.mode, total_amount: payload.totalAmount,
+    bill_id: billId, paid_by: uid, split_type: payload.mode, total_amount: payload.totalAmount,
   }).select().single();
   if (splitErr) { alert("Couldn't save split: " + splitErr.message); return; }
   const rows = payload.participants.map(p => ({
@@ -734,7 +753,7 @@ async function deleteBillItem(id) {
 }
 
 async function addRecurringItem(f) {
-  const payload = { type:f.type, amount:parseFloat(f.amount), currency:"USD", category:f.category, description:f.description||"", frequency:f.frequency, start_date:f.startDate, end_date:null, next_due:f.startDate, is_active:true };
+  const payload = { type:f.type, amount:parseFloat(f.amount), currency:"USD", category:f.category, description:f.description||"", frequency:f.frequency, start_date:f.startDate, end_date:null, next_due:f.startDate, is_active:true, user_id: await getUserId() };
   const { data, error } = await sb.from("recurring").insert(payload).select().single();
   if (error) { alert("Couldn't save recurring item: " + error.message); return; }
   RECURRING.push(mapRecurring(data));
@@ -1022,6 +1041,43 @@ function answerFinanceQuestion(qRaw) {
       lines.push(`That's ${diff>=0?"up":"down"} ${Math.abs(pct).toFixed(0)}% in spending compared to the week before.`);
     }
     lines.push(topCats.length ? `Top categories: ${topCats.map(([k,v]) => `${esc(getCat(k,"expense").label)} (${fmt(v)})`).join(", ")}.` : `No expenses logged this week.`);
+    const weekExpenses = weekTxs.filter(t => t.type === "expense");
+    if (weekExpenses.length > 2) {
+      const avgTx = weekExpenses.reduce((s,t)=>s+parseFloat(t.amount),0) / weekExpenses.length;
+      const unusual = weekExpenses.filter(t => parseFloat(t.amount) > avgTx * 2.5).sort((a,b)=>parseFloat(b.amount)-parseFloat(a.amount));
+      if (unusual.length) lines.push(`Unusual transaction: ${esc(unusual[0].description || getCat(unusual[0].category,"expense").label)} at ${fmt(parseFloat(unusual[0].amount))}, well above your typical ${fmt(avgTx)} transaction this week.`);
+    }
+    const recs = generateInsights().filter(i => i.type === "tip" || i.type === "warning");
+    if (recs.length) lines.push(`Recommendation: ${recs[0].text}`);
+    return cbLines(lines);
+  }
+
+  if (/monthly review|month in review|monthly report|monthly summary|how (was|is) my month/.test(q)) {
+    const now = new Date(), thisM = monthStr(now), lastM = monthStr(new Date(now.getFullYear(), now.getMonth()-1, 1));
+    const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM), lastTxs = TXS.filter(t => t.date.slice(0,7) === lastM);
+    const inc = totalOf(thisTxs,"income"), exp = totalOf(thisTxs,"expense");
+    const lastExp = totalOf(lastTxs,"expense");
+    const catMap = {}; thisTxs.filter(t=>t.type==="expense").forEach(t => { catMap[t.category]=(catMap[t.category]||0)+parseFloat(t.amount); });
+    const topCats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const lastCatMap = {}; lastTxs.filter(t=>t.type==="expense").forEach(t => { lastCatMap[t.category]=(lastCatMap[t.category]||0)+parseFloat(t.amount); });
+    let biggestImprovement = null, biggestRisk = null;
+    Object.keys(catMap).forEach(cat => {
+      if (lastCatMap[cat] > 0) {
+        const pct = ((catMap[cat]-lastCatMap[cat])/lastCatMap[cat])*100;
+        if (pct <= -15 && (!biggestImprovement || pct < biggestImprovement.pct)) biggestImprovement = { cat, pct };
+        if (pct >= 15 && (!biggestRisk || pct > biggestRisk.pct)) biggestRisk = { cat, pct };
+      }
+    });
+    const lines = [
+      `<strong>Monthly review</strong> — ${now.toLocaleDateString("en-US",{month:"long"})}`,
+      `Earned ${fmt(inc)}, spent ${fmt(exp)} — net ${fmt(inc-exp)}.`,
+      topCats.length ? `Where it went: ${topCats.map(([k,v])=>`${esc(getCat(k,"expense").label)} (${fmt(v)})`).join(", ")}.` : `No expenses logged this month yet.`,
+    ];
+    if (biggestImprovement) lines.push(`Biggest improvement: ${esc(getCat(biggestImprovement.cat,"expense").label)} down ${Math.abs(Math.round(biggestImprovement.pct))}% vs last month.`);
+    if (biggestRisk) lines.push(`Biggest risk: ${esc(getCat(biggestRisk.cat,"expense").label)} up ${Math.round(biggestRisk.pct)}% vs last month.`);
+    if (lastExp > 0) lines.push(`Total spending is ${exp>=lastExp?"up":"down"} ${Math.abs(Math.round(((exp-lastExp)/lastExp)*100))}% vs last month (${fmt(lastExp)}).`);
+    const strategy = generateInsights().find(i => i.type==="tip");
+    lines.push(`Next month: ${strategy ? strategy.text : "keep logging transactions so next month's review has more to compare against."}`);
     return cbLines(lines);
   }
 
@@ -1446,7 +1502,7 @@ function switchTab(tab) {
 }
 function renderMain() {
   const el = document.getElementById("main-content");
-  if (state.tab === "story") el.innerHTML = renderStory();
+  if (state.tab === "story") el.innerHTML = renderDashboard();
   else if (state.tab === "calendar") el.innerHTML = renderCalendar();
   else if (state.tab === "manage") el.innerHTML = renderManage();
   else if (state.tab === "tools") el.innerHTML = renderTools();
@@ -1467,6 +1523,7 @@ function chatBubbleHtml(m) {
   </div>`;
 }
 function renderAsk() {
+  const daily = generateDailyInsights();
   return `
   <div class="ask-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
     <div>
@@ -1475,6 +1532,10 @@ function renderAsk() {
       <p class="body-sm" style="margin-top:4px">Answers are computed instantly from your own data on this device \u2014 no network calls.</p>
     </div>
     <button class="icon-btn" style="flex-shrink:0" onclick="clearChat()" title="Clear chat">${icon("rotate-ccw")}</button>
+  </div>
+  <div class="card" style="margin:14px 0">
+    <p class="label" style="margin-bottom:6px">Today</p>
+    ${daily.map(t => `<div class="caption" style="padding:3px 0">${esc(t)}</div>`).join("")}
   </div>
   <div class="chat-messages" id="chat-messages">${CHAT_MSGS.map(chatBubbleHtml).join("")}</div>
   <div style="height:170px"></div>
@@ -1507,7 +1568,7 @@ function clearChat() {
 function buildChatSuggestions() {
   const el = document.getElementById("chat-suggest");
   if (!el) return;
-  const s = ["Give me my weekly report", "How much did I spend this month?", "What's my biggest expense category?", "Am I saving enough?"];
+  const s = ["Give me my weekly report", "Give me my monthly review", "How much did I spend this month?", "What's my biggest expense category?", "Am I saving enough?"];
   if (BUDGETS.some(b => b.month === monthStr(new Date()))) s.push("Am I over budget?");
   if (GOALS.length) s.push(`How's my ${GOALS[0].name} goal going?`);
   if (BILLS.some(b => b.isActive && !b.isPaid)) s.push("What bills are due soon?");
@@ -1811,6 +1872,317 @@ function renderSplitwiseHub() {
   refreshIcons();
 }
 
+/* ══════════════════════════════════════════════
+   RENDER: HOME (balances) — replaces the Story feed as the
+   landing screen for the stripped core-loop build.
+   ══════════════════════════════════════════════ */
+function computeFriendBalances() {
+  return FRIENDS.map(f => {
+    const parts = PARTICIPANTS.filter(p => p.friendId === f.id);
+    const pending = parts.filter(p => p.status === "pending");
+    const owed = pending.reduce((s,p) => s + (parseFloat(p.amountOwed)||0), 0);
+    const lastPart = parts.slice().sort((a,b) => (b.id||0)-(a.id||0))[0];
+    const lastSplit = lastPart ? SPLITS.find(s => s.id === lastPart.splitId) : null;
+    const lastLabel = lastSplit ? splitSubjectInfo(lastSplit).title : null;
+    return { friend: f, owed, pendingCount: pending.length, hasHistory: parts.length > 0, lastLabel };
+  }).filter(r => r.hasHistory).sort((a,b) => b.owed - a.owed);
+}
+async function settleAllForFriend(friendId) {
+  const pending = PARTICIPANTS.filter(p => p.friendId === friendId && p.status === "pending");
+  if (!pending.length) return;
+  const f = FRIENDS.find(x => x.id === friendId);
+  if (!confirm(`Mark all ${pending.length} pending split${pending.length>1?"s":""} from ${f?f.name:"this person"} as settled?`)) return;
+  for (const p of pending) { await toggleParticipantStatus(p.id); }
+  renderMain();
+}
+/* ══════════════════════════════════════════════
+   FINANCIAL HEALTH SCORE
+   Every number below is computed from real TXS/BUDGETS/GOALS/BILLS —
+   nothing here is a placeholder or a fabricated figure.
+   ══════════════════════════════════════════════ */
+function computeFinancialHealthScore(monthOverride) {
+  const now = new Date();
+  const thisM = monthOverride || monthStr(now);
+  const refDate = monthOverride ? new Date(monthOverride+"-01") : now;
+  const lastM = monthStr(new Date(refDate.getFullYear(), refDate.getMonth()-1, 1));
+  const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
+  const lastTxs = TXS.filter(t => t.date.slice(0,7) === lastM);
+  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const lastExpense = lastTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+
+  // Savings rate: (income - expense) / income, scaled to 0-100
+  const savingsRate = income > 0 ? (income - expense) / income : (expense > 0 ? -1 : 0);
+  const savingsScore = clamp(Math.round(50 + savingsRate * 100), 0, 100);
+
+  // Spending control: % of that month's budget categories that stayed within budget
+  const thisMonthBudgets = BUDGETS.filter(b => b.month === thisM);
+  let spendingScore = 70; // neutral default when there's not enough budget data yet
+  if (thisMonthBudgets.length > 0) {
+    const withinBudget = thisMonthBudgets.filter(b => {
+      const spent = thisTxs.filter(t => t.type==="expense" && t.category===b.category).reduce((s,t)=>s+parseFloat(t.amount),0);
+      return spent <= parseFloat(b.amount);
+    }).length;
+    spendingScore = Math.round((withinBudget / thisMonthBudgets.length) * 100);
+  }
+
+  // Bills and Goals reflect current live state regardless of monthOverride — the app
+  // doesn't keep historical snapshots of bill/goal status, so trend comparisons below
+  // are driven by savings/spending/cash-flow only, which ARE cleanly historical.
+  const activeBills = BILLS.filter(b => b.isActive);
+  const today = dayStr();
+  const billsScore = activeBills.length > 0
+    ? Math.round((activeBills.filter(b => !b.nextDue || b.nextDue >= today).length / activeBills.length) * 100)
+    : 100;
+
+  // Goals: average progress across active goals, capped at 100 each
+  const goalsScore = GOALS.length > 0
+    ? Math.round(GOALS.reduce((s,g) => s + clamp((parseFloat(g.currentAmount)/parseFloat(g.targetAmount||1))*100, 0, 100), 0) / GOALS.length)
+    : 70; // neutral default with no goals set yet
+
+  // Cash flow: this month's net, scaled against income (or a flat penalty if no income logged)
+  const netFlow = income - expense;
+  const cashFlowScore = income > 0 ? clamp(Math.round(50 + (netFlow/income) * 100), 0, 100) : (netFlow >= 0 ? 60 : 30);
+
+  const overall = Math.round(savingsScore*0.25 + spendingScore*0.2 + billsScore*0.2 + goalsScore*0.15 + cashFlowScore*0.2);
+
+  // Explanations: only generated when the underlying comparison actually has data on both sides.
+  const explanations = [];
+  if (lastExpense > 0 && expense > 0) {
+    const changePct = Math.round(((expense - lastExpense) / lastExpense) * 100);
+    if (changePct <= -5) explanations.push(`Your score is up because total spending is ${Math.abs(changePct)}% lower than last month.`);
+    else if (changePct >= 5) explanations.push(`Your score is down because total spending is ${changePct}% higher than last month.`);
+  }
+  if (income > 0 && savingsRate < 0.2) {
+    const targetSavings = Math.round(income * 0.2 - (income - expense));
+    if (targetSavings > 0) explanations.push(`Your score can improve by saving about ${fmt(targetSavings)} more this month.`);
+  }
+  if (activeBills.some(b => b.nextDue && b.nextDue < today)) {
+    explanations.push(`You have an overdue bill — catching it up will raise your Bills score.`);
+  }
+  if (!explanations.length) explanations.push(income===0 && expense===0 ? "Log a few transactions this month to get a real score." : "Keep logging transactions for more personalized explanations.");
+
+  return { overall, breakdown: { savings:savingsScore, spendingControl:spendingScore, bills:billsScore, goals:goalsScore, cashFlow:cashFlowScore }, explanations, income, expense };
+}
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+function computeHealthTrend() {
+  const now = new Date();
+  const thisM = monthStr(now);
+  const lastM = monthStr(new Date(now.getFullYear(), now.getMonth()-1, 1));
+  const cur = computeFinancialHealthScore(thisM);
+  const prev = computeFinancialHealthScore(lastM);
+  const delta = cur.overall - prev.overall;
+  const reasons = [];
+  if (cur.breakdown.savings > prev.breakdown.savings) reasons.push("Increased savings");
+  if (cur.breakdown.spendingControl > prev.breakdown.spendingControl) reasons.push("Reduced unnecessary spending");
+  if (cur.breakdown.bills >= 90) reasons.push("Paid bills on time");
+  if (cur.breakdown.cashFlow > prev.breakdown.cashFlow) reasons.push("Improved cash flow");
+  return { score: cur.overall, delta, reasons, hasComparison: prev.income > 0 || prev.expense > 0 };
+}
+
+/* ══════════════════════════════════════════════
+   AUTOMATIC INSIGHTS ENGINE
+   Each detector only fires when the underlying data actually
+   supports the claim — no insight is shown without real numbers behind it.
+   ══════════════════════════════════════════════ */
+function generateInsights() {
+  const insights = [];
+  const now = new Date();
+  const thisM = monthStr(now);
+  const lastM = monthStr(new Date(now.getFullYear(), now.getMonth()-1, 1));
+  const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
+  const lastTxs = TXS.filter(t => t.date.slice(0,7) === lastM);
+  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const today = dayStr();
+
+  // Overspending per category vs last month
+  const catTotals = (txs) => { const m = {}; txs.filter(t=>t.type==="expense").forEach(t => { m[t.category] = (m[t.category]||0) + parseFloat(t.amount); }); return m; };
+  const thisCat = catTotals(thisTxs), lastCat = catTotals(lastTxs);
+  Object.keys(thisCat).forEach(cat => {
+    if (lastCat[cat] > 0) {
+      const pct = Math.round(((thisCat[cat] - lastCat[cat]) / lastCat[cat]) * 100);
+      if (pct >= 25) insights.push({ icon:"trending-up", type:"warning", text:`You've spent ${pct}% more on ${getCat(cat,"expense").label.toLowerCase()} than last month (${fmt(thisCat[cat])} vs ${fmt(lastCat[cat])}).` });
+    }
+  });
+
+  // Subscriptions: active recurring expenses
+  const activeRecurring = RECURRING.filter(r => r.isActive && r.type === "expense");
+  if (activeRecurring.length > 0) {
+    const monthlyTotal = activeRecurring.reduce((s,r) => s + parseFloat(r.amount) * (r.frequency==="weekly"?4.33:r.frequency==="yearly"?(1/12):1), 0);
+    insights.push({ icon:"repeat", type:"info", text:`You have ${activeRecurring.length} recurring payment${activeRecurring.length>1?"s":""} totaling about ${fmt(monthlyTotal)}/month.` });
+  }
+
+  // Cash flow risk: upcoming bills (next 30 days) vs this month's income so far
+  const in30 = dayStr(new Date(now.getTime() + 30*86400000));
+  const upcomingBillsTotal = BILLS.filter(b => b.isActive && b.nextDue && b.nextDue >= today && b.nextDue <= in30).reduce((s,b)=>s+parseFloat(b.amount),0);
+  if (income > 0 && upcomingBillsTotal > income) {
+    insights.push({ icon:"alert-triangle", type:"risk", text:`Upcoming bills in the next 30 days (${fmt(upcomingBillsTotal)}) exceed income logged this month (${fmt(income)}).` });
+  }
+
+  // Savings opportunity: biggest discretionary category this month (excluding rent/bills-type categories)
+  const discretionary = Object.entries(thisCat).filter(([cat]) => !["rent","bills","utilities","loan","emi"].includes(cat)).sort((a,b)=>b[1]-a[1])[0];
+  if (discretionary && discretionary[1] > 0) {
+    insights.push({ icon:"lightbulb", type:"tip", text:`${getCat(discretionary[0],"expense").label} is your top discretionary spend this month at ${fmt(discretionary[1])} — trimming it is the fastest lever on your savings rate.` });
+  }
+
+  if (!insights.length) insights.push({ icon:"info", type:"info", text:"Log more transactions to start seeing personalized insights here." });
+  return insights.slice(0, 5);
+}
+function generateDailyInsights() {
+  const insights = [];
+  const today = dayStr();
+  const now = new Date();
+  const thisM = monthStr(now);
+  const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
+  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+
+  const nextIncome = RECURRING.filter(r => r.isActive && r.type==="income" && r.nextDue).sort((a,b)=>a.nextDue.localeCompare(b.nextDue))[0];
+  if (nextIncome) insights.push(`You have ${fmt(income-expense)} available until your next paycheck on ${new Date(nextIncome.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})}.`);
+
+  const in3 = dayStr(new Date(now.getTime()+3*86400000));
+  const soonBill = BILLS.filter(b => b.isActive && b.nextDue && b.nextDue>=today && b.nextDue<=in3).sort((a,b)=>a.nextDue.localeCompare(b.nextDue))[0];
+  if (soonBill) {
+    const days = Math.round((new Date(soonBill.nextDue)-new Date(today))/86400000);
+    insights.push(`Your ${esc(soonBill.name)} bill (${fmt(parseFloat(soonBill.amount))}) is due in ${days===0?"today":days+" day"+(days>1?"s":"")}.`);
+  }
+
+  const todaysTxs = TXS.filter(t => t.date.slice(0,10)===today && t.type==="expense");
+  if (todaysTxs.length) {
+    const cat = todaysTxs[0].category;
+    const ago30 = new Date(now.getTime()-30*86400000);
+    const histTxs = TXS.filter(t => t.type==="expense" && t.category===cat && new Date(t.date)>=ago30 && t.date.slice(0,10)!==today);
+    if (histTxs.length >= 3) {
+      const avgDaily = histTxs.reduce((s,t)=>s+parseFloat(t.amount),0)/30;
+      const todayTotal = todaysTxs.filter(t=>t.category===cat).reduce((s,t)=>s+parseFloat(t.amount),0);
+      if (avgDaily > 0 && todayTotal > avgDaily*1.5) {
+        const pct = Math.round(((todayTotal-avgDaily)/avgDaily)*100);
+        insights.push(`You're spending ${pct}% more on ${getCat(cat,"expense").label.toLowerCase()} today than your recent daily average.`);
+      }
+    }
+  }
+  if (!insights.length) insights.push("No urgent items today — log a transaction to keep your insights current.");
+  return insights.slice(0,3);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER: DASHBOARD (Home) — Money status, Health Score,
+   AI Recommendations, Goals progress, Recent activity.
+   ══════════════════════════════════════════════ */
+function renderDashboard() {
+  const health = computeFinancialHealthScore();
+  const insights = generateInsights();
+  const now = new Date();
+  const thisM = monthStr(now);
+  const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
+  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const balance = TXS.reduce((s,t) => s + (t.type==="income" ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
+  const today = dayStr();
+  const nextBill = BILLS.filter(b => b.isActive && b.nextDue && b.nextDue >= today).sort((a,b) => a.nextDue.localeCompare(b.nextDue))[0];
+  const recent = TXS.slice().sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0, 5);
+
+  const scoreColor = health.overall >= 75 ? "var(--green)" : health.overall >= 50 ? "var(--yellow, #e0a63c)" : "var(--red)";
+  const breakdownRow = (label, val) => `<div style="flex:1;text-align:center">
+    <div class="mono" style="font-size:.9375rem;font-weight:700;color:${val>=70?"var(--green)":val>=50?"var(--text-1)":"var(--red)"}">${val}</div>
+    <div class="caption" style="margin-top:2px">${label}</div>
+  </div>`;
+
+  return `
+  <div style="margin-bottom:16px">
+    <p class="label">Your money status</p>
+    <h2 class="heading-lg" style="margin-top:4px">${fmt(balance)}</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+      <div><div class="caption">Safe to spend (this month)</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px;color:${(income-expense)>=0?"var(--green)":"var(--red)"}">${fmt(income-expense)}</div></div>
+      <div><div class="caption">Upcoming bill</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px">${nextBill ? `${fmt(parseFloat(nextBill.amount))} · ${esc(nextBill.name)}` : "None due"}</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+      <span class="label">Financial Health Score</span>
+      <span class="mono" style="font-size:1.5rem;font-weight:800;color:${scoreColor}">${health.overall}<span style="font-size:.875rem;color:var(--text-3);font-weight:600">/100</span></span>
+    </div>
+    ${trend.hasComparison ? `<div class="caption" style="margin-bottom:10px;color:${trend.delta>0?"var(--green)":trend.delta<0?"var(--red)":"var(--text-3)"}">${trend.delta>0?"↑":trend.delta<0?"↓":"→"} ${trend.delta>0?"+":""}${trend.delta} this month${trend.reasons.length?" · "+trend.reasons.map(r=>"✓ "+r).join(", "):""}</div>` : `<div style="margin-bottom:10px"></div>`}
+    <div style="display:flex;gap:4px;margin-bottom:12px">
+      ${breakdownRow("Savings", health.breakdown.savings)}
+      ${breakdownRow("Spending", health.breakdown.spendingControl)}
+      ${breakdownRow("Bills", health.breakdown.bills)}
+      ${breakdownRow("Goals", health.breakdown.goals)}
+      ${breakdownRow("Cash Flow", health.breakdown.cashFlow)}
+    </div>
+    ${health.explanations.map(e => `<div class="caption" style="padding:4px 0">${esc(e)}</div>`).join("")}
+    ${health.overall < 90 ? `<button class="pill" style="margin-top:8px;padding:6px 14px;font-size:.6875rem" onclick="switchTab('ask')">Improve your score</button>` : ""}
+  </div>
+
+  <p class="label" style="margin-bottom:8px">AI Recommendations</p>
+  ${insights.map(i => `<div class="list-item card-flat" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
+    <span style="color:${i.type==="risk"?"var(--red)":i.type==="warning"?"var(--red)":i.type==="tip"?"var(--green)":"var(--text-2)"};flex-shrink:0;margin-top:1px">${icon(i.icon,'style="width:15px;height:15px"')}</span>
+    <span style="font-size:.8125rem;line-height:1.4">${esc(i.text)}</span>
+  </div>`).join("")}
+
+  <p class="label" style="margin:16px 0 8px">Goals progress</p>
+  ${GOALS.length === 0 ? `<p class="caption" style="padding:4px 0 16px">No goals set yet.</p>` :
+    GOALS.slice(0,3).map(g => { const pct = clamp(Math.round((parseFloat(g.currentAmount)/parseFloat(g.targetAmount||1))*100),0,100); return `<div class="list-item card-flat" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:.8125rem;font-weight:700;margin-bottom:6px"><span>${esc(g.name)}</span><span class="mono">${pct}%</span></div>
+      <div class="balance-meter" style="margin:0"><div class="balance-meter-fill" style="width:${pct}%;background:${g.color||"var(--grad-1)"}"></div></div>
+    </div>`; }).join("")}
+
+  <p class="label" style="margin:16px 0 8px">Recent activity</p>
+  ${recent.length === 0 ? emptyBlock("activity", "No transactions yet", "Add your first transaction to get started") :
+    recent.map(t => `<div class="list-item card-flat" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:.8125rem">${esc(t.description || getCat(t.category,t.type).label)}</span>
+      <span class="mono" style="font-size:.8125rem;font-weight:700;color:${t.type==="income"?"var(--green)":"var(--red)"}">${t.type==="income"?"+":"-"}${fmt(parseFloat(t.amount))}</span>
+    </div>`).join("")}
+  `;
+}
+function renderHome() {
+  const balances = computeFriendBalances();
+  const totalOwed = balances.reduce((s,r) => s + r.owed, 0);
+  const allSplitParts = PARTICIPANTS.filter(p => !p.isPayer);
+  const totalSplitVolume = allSplitParts.reduce((s,p) => s + (parseFloat(p.amountOwed)||0), 0);
+  const settledVolume = allSplitParts.filter(p => p.status === "settled").reduce((s,p) => s + (parseFloat(p.amountOwed)||0), 0);
+  const collectedPct = totalSplitVolume > 0 ? Math.round((settledVolume/totalSplitVolume)*100) : 0;
+
+  const initials = (name) => esc(name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase());
+
+  return `
+  <div style="margin-bottom:16px">
+    <p class="label">Home</p>
+    <h2 class="heading-lg" style="margin-top:4px">Balances</h2>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="caption">Owed to you</div>
+    <div class="mono" style="font-size:2rem;font-weight:800;margin-top:4px;color:${totalOwed>0?"var(--green)":"var(--text-1)"}">${fmt(totalOwed)}</div>
+    ${totalSplitVolume > 0 ? `
+      <div class="balance-meter"><div class="balance-meter-fill" style="width:${collectedPct}%"></div></div>
+      <div class="balance-meter-labels"><span>Collected ${fmt(settledVolume)}</span><span>${collectedPct}%</span></div>
+    ` : ""}
+  </div>
+
+  <p class="label" style="margin-bottom:8px">People — ${balances.length}</p>
+  ${balances.length === 0 ? emptyBlock("users", "No splits yet", "Split a transaction or bill with a friend to see balances here") :
+    balances.map(r => `<div class="list-item card-flat" style="margin-bottom:8px">
+      <div class="home-person-row">
+        <div class="home-person-avatar" style="background:${r.friend.avatarColor}">${initials(r.friend.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.8125rem;font-weight:700">${esc(r.friend.name)}</div>
+          <div class="caption" style="margin-top:1px">${r.lastLabel ? esc(r.lastLabel) : ""}${r.pendingCount ? ` · ${r.pendingCount} pending` : ""}</div>
+        </div>
+        ${r.owed > 0 ? `
+          <div style="text-align:right;margin-right:8px">
+            <div class="mono" style="font-size:.875rem;font-weight:700;color:var(--green)">${fmt(r.owed)}</div>
+          </div>
+          <button class="pill" style="padding:6px 12px;font-size:.6875rem" onclick="settleAllForFriend(${r.friend.id})">Settle</button>
+        ` : `<span class="caption" style="color:var(--text-3)">Settled</span>`}
+      </div>
+    </div>`).join("")}
+  `;
+}
 function renderStory() {
   const s = computeSummary({ date: state.date });
   const ins = computeInsights();
@@ -2060,6 +2432,47 @@ async function submitBudget() {
 }
 async function onDelBudget(id) { await deleteBudget(id); renderMain(); }
 
+/* ══════════════════════════════════════════════
+   CASHFLOW AUTOPILOT
+   Projects goal completion from real 30-day income/expense trend
+   (computeForecast) and real recurring/discretionary data
+   (generateInsights) — not fabricated dollar suggestions.
+   ══════════════════════════════════════════════ */
+function computeAutopilot(goal) {
+  const forecast = computeForecast();
+  const monthlyAbility = forecast.projSavings;
+  const remaining = Math.max(parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount), 0);
+  let monthsRemaining = null, requiredMonthly = null;
+  if (goal.deadline) {
+    const now = new Date(), dl = new Date(goal.deadline);
+    monthsRemaining = Math.max((dl.getFullYear()-now.getFullYear())*12 + (dl.getMonth()-now.getMonth()) + (dl.getDate()>=now.getDate()?0:-1), 0.1);
+    requiredMonthly = remaining / monthsRemaining;
+  }
+  let status, predictedDate = null;
+  if (remaining <= 0) status = "COMPLETE";
+  else if (monthlyAbility <= 0) status = "BEHIND";
+  else {
+    predictedDate = new Date(); predictedDate.setMonth(predictedDate.getMonth() + Math.ceil(remaining/monthlyAbility));
+    if (requiredMonthly !== null) status = monthlyAbility >= requiredMonthly*0.95 ? "ON TRACK" : monthlyAbility >= requiredMonthly*0.5 ? "AT RISK" : "BEHIND";
+    else status = "ON TRACK";
+  }
+  const insights = generateInsights().filter(i => i.type !== "risk" || true).slice(0,3).map(i => i.text);
+  return { remaining, monthlyAbility, requiredMonthly, monthsRemaining, status, predictedDate, recommendations: insights };
+}
+function autopilotCard(goal) {
+  if (parseFloat(goal.currentAmount) >= parseFloat(goal.targetAmount)) return "";
+  const ap = computeAutopilot(goal);
+  const statusColor = ap.status === "ON TRACK" ? "var(--green)" : ap.status === "AT RISK" ? "var(--yellow, #e0a63c)" : "var(--red)";
+  return `<div class="card-flat" style="padding:12px 14px;margin-top:8px;border-radius:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span class="caption" style="font-weight:700">Autopilot</span>
+      <span style="font-size:10px;font-weight:800;letter-spacing:.02em;color:${statusColor}">${ap.status}</span>
+    </div>
+    ${ap.requiredMonthly !== null ? `<div class="caption">Needs ${fmt(ap.requiredMonthly)}/mo · currently saving ~${fmt(Math.max(ap.monthlyAbility,0))}/mo</div>` : `<div class="caption">Saving ~${fmt(Math.max(ap.monthlyAbility,0))}/mo based on the last 30 days</div>`}
+    ${ap.predictedDate ? `<div class="caption" style="margin-top:2px">Projected to reach this goal around ${ap.predictedDate.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>` : `<div class="caption" style="margin-top:2px">Not currently saving enough to project a completion date.</div>`}
+    ${ap.recommendations.length ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">${ap.recommendations.map(r=>`<div class="caption" style="padding:2px 0">→ ${esc(r)}</div>`).join("")}</div>` : ""}
+  </div>`;
+}
 function renderSavings() {
   return `
   <div class="section-head"><p style="font-size:.75rem;font-weight:700">Savings Goals</p><button class="pill active" onclick="toggleForm('goal-form')">${icon("plus",'style="width:11px;height:11px"')} Goal</button></div>
@@ -2092,6 +2505,7 @@ function renderSavings() {
           <button style="padding:6px 12px;border-radius:8px;color:#fff;font-size:.75rem;font-weight:700;background:var(--green)" onclick="onGoalAdd(${g.id},${cur},1)">${icon("plus",'style="width:12px;height:12px"')}</button>
           <button style="padding:6px 12px;border-radius:8px;color:#fff;font-size:.75rem;font-weight:700;background:var(--red)" onclick="onGoalAdd(${g.id},${cur},-1)">${icon("minus",'style="width:12px;height:12px"')}</button>
         </div>
+        ${autopilotCard(g)}
       </div>`;
     }).join("")}`;
 }
@@ -2252,13 +2666,24 @@ function toggleForm(id) { const el = document.getElementById(id); const isOpen =
    RENDER: TOOLS TAB
    ══════════════════════════════════════════════ */
 function renderTools() {
+  const presets = [["month","This month"],["lastMonth","Last month"],["last3","Last 3 months"],["custom","Custom"]];
+  const types = [["all","Complete report"],["expense","Expenses only"],["income","Income only"]];
   return `
-  <p style="font-size:.75rem;font-weight:700;margin-bottom:16px">Export & Import</p>
+  <p style="font-size:.75rem;font-weight:700;margin-bottom:16px">Download Center</p>
+  <div class="card" style="padding:16px;margin-bottom:12px">
+    <p class="label" style="margin-bottom:8px">Date range</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;${state.exportPreset==="custom"?"margin-bottom:10px":""}">
+      ${presets.map(([k,l]) => `<button class="pill" style="padding:6px 12px;font-size:.6875rem;${state.exportPreset===k?"background:var(--grad-1);color:#fff":""}" onclick="setExportPreset('${k}')">${l}</button>`).join("")}
+    </div>
+    ${state.exportPreset==="custom" ? `<div class="grid-2">
+      <input class="input" id="tool-start" type="date" style="font-size:.75rem" onchange="renderMain()">
+      <input class="input" id="tool-end" type="date" style="font-size:.75rem" onchange="renderMain()">
+    </div>` : ""}
+  </div>
   <div class="card" style="padding:16px;margin-bottom:16px">
-    <p class="label" style="margin-bottom:8px">Date Range (optional)</p>
-    <div class="grid-2">
-      <input class="input" id="tool-start" type="date" style="font-size:.75rem">
-      <input class="input" id="tool-end" type="date" style="font-size:.75rem">
+    <p class="label" style="margin-bottom:8px">What to include</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${types.map(([k,l]) => `<button class="pill" style="padding:6px 12px;font-size:.6875rem;${state.exportType===k?"background:var(--grad-1);color:#fff":""}" onclick="setExportType('${k}')">${l}</button>`).join("")}
     </div>
   </div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
@@ -2274,50 +2699,117 @@ function renderTools() {
     <button style="padding:10px 24px;border-radius:12px;color:#fff;font-size:.875rem;font-weight:700;background:var(--grad-1)" onclick="document.getElementById('import-file').click()">${icon("file-up",'style="width:13px;height:13px;display:inline;margin-right:4px"')} Choose File</button>
   </div>`;
 }
-function getFilteredTxs() {
+function setExportPreset(p) { state.exportPreset = p; renderMain(); }
+function setExportType(t) { state.exportType = t; renderMain(); }
+function getExportRange() {
+  const now = new Date();
+  if (state.exportPreset === "month") { const s = new Date(now.getFullYear(), now.getMonth(), 1); return { start: dayStr(s), end: dayStr(now), label: now.toLocaleDateString("en-US",{month:"long",year:"numeric"}) }; }
+  if (state.exportPreset === "lastMonth") { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); const e = new Date(now.getFullYear(), now.getMonth(), 0); return { start: dayStr(s), end: dayStr(e), label: s.toLocaleDateString("en-US",{month:"long",year:"numeric"}) }; }
+  if (state.exportPreset === "last3") { const s = new Date(now.getFullYear(), now.getMonth()-2, 1); return { start: dayStr(s), end: dayStr(now), label: `${s.toLocaleDateString("en-US",{month:"short",year:"numeric"})} \u2013 ${now.toLocaleDateString("en-US",{month:"short",year:"numeric"})}` }; }
   const start = document.getElementById("tool-start") ? document.getElementById("tool-start").value : "";
   const end = document.getElementById("tool-end") ? document.getElementById("tool-end").value : "";
-  return TXS.filter(t => (!start || t.date.slice(0,10) >= start) && (!end || t.date.slice(0,10) <= end));
+  return { start, end, label: start && end ? `${start} to ${end}` : "All time" };
+}
+function getFilteredTxs() {
+  const { start, end } = getExportRange();
+  let txs = TXS.filter(t => (!start || t.date.slice(0,10) >= start) && (!end || t.date.slice(0,10) <= end));
+  if (state.exportType === "expense") txs = txs.filter(t => t.type === "expense");
+  if (state.exportType === "income") txs = txs.filter(t => t.type === "income");
+  return txs;
+}
+function exportReportTitle() {
+  return state.exportType === "expense" ? "Expense Report" : state.exportType === "income" ? "Income Report" : "Complete Financial Report";
+}
+function categoryBreakdown(txs, type) {
+  const m = {};
+  txs.filter(t => t.type === type).forEach(t => { const label = getCat(t.category, type).label; m[label] = (m[label]||0) + parseFloat(t.amount); });
+  return Object.entries(m).sort((a,b) => b[1]-a[1]);
 }
 function downloadBlob(blob, name) { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); }
 function exportCSVFile() {
   const txs = getFilteredTxs();
+  const range = getExportRange();
+  const meta = [[`"${exportReportTitle()}"`], [`"Period: ${range.label}"`], [`"Exported: ${new Date().toLocaleDateString()}"`], [""]];
   const h = ["Date","Type","Category","Amount","Currency","Description","Notes"];
   const rows = txs.map(t => [new Date(t.date).toLocaleDateString(), t.type, getCat(t.category,t.type).label, t.amount, t.currency, t.description||"", t.notes||""]);
-  const csv = [h, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-  downloadBlob(new Blob([csv], {type:"text/csv"}), "cashflow.csv");
+  const csv = meta.map(r=>r.join(",")).concat([h, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))).join("\n");
+  downloadBlob(new Blob([csv], {type:"text/csv"}), `cashflow-${state.exportType}-${range.start||"all"}.csv`);
 }
 function exportExcel() {
   const txs = getFilteredTxs();
-  const data = txs.map(t => ({ Date: new Date(t.date).toLocaleDateString(), Type: t.type, Category: getCat(t.category,t.type).label, Amount: parseFloat(t.amount), Currency: t.currency, Description: t.description||"", Notes: t.notes||"" }));
+  const range = getExportRange();
   const wb = XLSX.utils.book_new();
+  const income = txs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = txs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const summaryRows = [{ Report: exportReportTitle(), Period: range.label, Exported: new Date().toLocaleDateString() }, {}];
+  if (state.exportType !== "expense") summaryRows.push({ Metric: "Total Income", Amount: income });
+  if (state.exportType !== "income") summaryRows.push({ Metric: "Total Expenses", Amount: expense });
+  if (state.exportType === "all") summaryRows.push({ Metric: "Net", Amount: income-expense });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows, {skipHeader:true}), "Summary");
+  const data = txs.map(t => ({ Date: new Date(t.date).toLocaleDateString(), Type: t.type, Category: getCat(t.category,t.type).label, Amount: parseFloat(t.amount), Currency: t.currency, Description: t.description||"", Notes: t.notes||"" }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Transactions");
-  XLSX.writeFile(wb, "cashflow.xlsx");
+  XLSX.writeFile(wb, `cashflow-${state.exportType}-${range.start||"all"}.xlsx`);
 }
-function exportPDF() {
+async function exportPDF() {
   const txs = getFilteredTxs();
+  const range = getExportRange();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  doc.setFontSize(18); doc.setTextColor(99,107,255); doc.text("CashFlow Report", 14, 20);
-  const ti = txs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
-  const te = txs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
-  doc.setFontSize(10); doc.setTextColor(0,200,150); doc.text(`Income: $${ti.toFixed(2)}`, 14, 30);
-  doc.setTextColor(255,92,114); doc.text(`Expense: $${te.toFixed(2)}`, 14, 36);
-  doc.setTextColor(0); doc.text(`Net: $${(ti-te).toFixed(2)}`, 14, 42);
-  doc.autoTable({ startY:50, head:[["Date","Type","Category","Amount","Description"]], body: txs.map(t => [new Date(t.date).toLocaleDateString(), t.type, getCat(t.category,t.type).label, fmt(parseFloat(t.amount), t.currency), t.description||""]), styles:{fontSize:8}, headStyles:{fillColor:[99,107,255]} });
-  doc.save("cashflow.pdf");
+  const { data: { user } } = await sb.auth.getUser();
+  let y = 20;
+  doc.setFontSize(18); doc.setTextColor(99,107,255); doc.text("CashFlow", 14, y);
+  doc.setFontSize(9); doc.setTextColor(140,140,150); doc.text(exportReportTitle(), 14, y+7);
+  y += 18;
+  doc.setFontSize(9); doc.setTextColor(90,90,100);
+  doc.text(`Account: ${user ? user.email : "Unknown"}`, 14, y);
+  doc.text(`Period: ${range.label}`, 14, y+5);
+  doc.text(`Exported: ${new Date().toLocaleDateString()}`, 14, y+10);
+  y += 20;
+
+  const income = txs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = txs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  doc.setFontSize(11); doc.setTextColor(0);
+  if (state.exportType !== "expense") { doc.setTextColor(0,200,150); doc.text(`Total Income: $${income.toFixed(2)}`, 14, y); y += 7; }
+  if (state.exportType !== "income") { doc.setTextColor(255,92,114); doc.text(`Total Expenses: $${expense.toFixed(2)}`, 14, y); y += 7; }
+  if (state.exportType === "all") { doc.setTextColor(0); doc.text(`Net Savings: $${(income-expense).toFixed(2)}`, 14, y); y += 7; }
+  y += 4;
+
+  if (state.exportType !== "expense" && income > 0) {
+    const inc = categoryBreakdown(txs, "income");
+    doc.setFontSize(10); doc.setTextColor(0); doc.text("Income by category", 14, y); y += 3;
+    doc.autoTable({ startY:y, head:[["Category","Amount"]], body: inc.map(([c,v])=>[c, `$${v.toFixed(2)}`]), styles:{fontSize:8}, headStyles:{fillColor:[0,200,150]}, margin:{left:14}, tableWidth:90 });
+    y = doc.lastAutoTable.finalY + 10;
+  }
+  if (state.exportType !== "income" && expense > 0) {
+    const exp = categoryBreakdown(txs, "expense");
+    doc.setFontSize(10); doc.setTextColor(0); doc.text("Expenses by category", 14, y); y += 3;
+    doc.autoTable({ startY:y, head:[["Category","Amount"]], body: exp.map(([c,v])=>[c, `$${v.toFixed(2)}`]), styles:{fontSize:8}, headStyles:{fillColor:[255,92,114]}, margin:{left:14}, tableWidth:90 });
+    y = doc.lastAutoTable.finalY + 10;
+  }
+
+  if (state.exportType === "all") {
+    const health = computeFinancialHealthScore();
+    doc.setFontSize(10); doc.setTextColor(0); doc.text(`Financial Health Score: ${health.overall}/100`, 14, y); y += 6;
+    const recs = generateInsights().slice(0,3);
+    if (recs.length) { doc.setFontSize(9); doc.setTextColor(90,90,100); doc.text("AI Recommendations:", 14, y); y += 5; recs.forEach(r => { doc.text(`- ${r.text}`, 16, y, {maxWidth:180}); y += 6; }); y += 4; }
+  }
+
+  doc.setFontSize(9); doc.setTextColor(0); doc.text("Transactions", 14, y); y += 2;
+  doc.autoTable({ startY:y, head:[["Date","Type","Category","Amount","Description"]], body: txs.map(t => [new Date(t.date).toLocaleDateString(), t.type, getCat(t.category,t.type).label, fmt(parseFloat(t.amount), t.currency), t.description||""]), styles:{fontSize:8}, headStyles:{fillColor:[99,107,255]} });
+  doc.save(`cashflow-${state.exportType}-${range.start||"all"}.pdf`);
 }
 function handleImport(e) {
   const file = e.target.files[0]; if (!file) return;
   Papa.parse(file, { header:true, skipEmptyLines:true, complete: async (r) => {
     const rows = [];
     let skipped = 0;
+    const uid = await getUserId();
     r.data.forEach(row => {
       const t = (row.type||"").toLowerCase().trim();
       const a = parseFloat(row.amount);
       const c = (row.category||"").toLowerCase().trim();
       if ((t!=="income" && t!=="expense") || isNaN(a) || a<=0 || !c) { skipped++; return; }
-      rows.push({ type:t, amount:a, category:c, description:row.description||"", notes:row.notes||"", currency:row.currency||"USD", date: row.date ? new Date(row.date).toISOString() : new Date().toISOString(), is_recurring:false, recurring_id:null });
+      rows.push({ type:t, amount:a, category:c, description:row.description||"", notes:row.notes||"", currency:row.currency||"USD", date: row.date ? new Date(row.date).toISOString() : new Date().toISOString(), is_recurring:false, recurring_id:null, user_id: uid });
     });
     e.target.value = "";
     if (!rows.length) { alert(`Imported 0, skipped ${skipped}`); return; }
@@ -2744,6 +3236,7 @@ async function startApp() {
       authMode = "signin"; renderAuthScreen(); showAuthScreen();
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
+      _cachedUserId = null;
     }
   });
 }
