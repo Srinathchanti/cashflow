@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CashFlow — Personal Finance</title>
+<title>CashFlow 2.0 — Personal Finance</title>
 <style>
 @font-face { font-family: "SF"; src: local("Inter"), local("-apple-system"), local("BlinkMacSystemFont"); }
 :root {
@@ -273,6 +273,30 @@ textarea.input { min-height:60px; resize:none; }
 .balance-meter-labels { display:flex; justify-content:space-between; font-size:.6875rem; color:var(--text-3); }
 .home-person-row { display:flex; align-items:center; gap:12px; }
 .home-person-avatar { width:38px; height:38px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:.8125rem; font-weight:700; color:#0b0d16; flex-shrink:0; }
+
+/* CashFlow 2.0 — refreshed overview and purchase planner */
+.cf2-hero{border:1px solid rgba(255,255,255,.15);border-radius:26px;padding:24px;background:linear-gradient(120deg,#504fe0,#7b61d7 55%,#a15fbc);color:#fff;box-shadow:0 16px 36px rgba(87,83,204,.20);margin-bottom:16px;position:relative;overflow:hidden}
+.cf2-hero:after{content:"";position:absolute;width:190px;height:190px;right:-70px;top:-90px;border-radius:100%;background:rgba(255,255,255,.1);pointer-events:none}
+.cf2-kicker{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.82}
+.cf2-total{font-size:clamp(27px,7vw,38px);font-weight:800;letter-spacing:-.04em;margin:8px 0 22px;overflow-wrap:anywhere}
+.cf2-flex{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cf2-hero-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px}
+.cf2-hero-stat strong{display:block;font-size:18px;margin-top:6px;overflow-wrap:anywhere}
+.cf2-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 22px}
+.cf2-action{border:1px solid var(--border);background:var(--surface-1);border-radius:17px;padding:14px 5px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;font-weight:700;transition:transform .2s}
+.cf2-action:hover{transform:translateY(-2px)}
+.cf2-action svg{width:20px;height:20px;color:var(--blue)}
+.cf2-panel{background:var(--surface-1);border:1px solid var(--border);border-radius:22px;padding:20px;margin-bottom:16px}
+.cf2-section-title{font-weight:750;font-size:15px;margin-bottom:12px;display:flex;gap:8px;align-items:center}
+.cf2-line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cf2-line:last-child{border-bottom:none}.cf2-line span{color:var(--text-2)}
+.cf2-status{display:flex;align-items:flex-start;gap:10px;border-radius:14px;padding:14px;font-size:13px;line-height:1.55;margin-top:12px}
+.cf2-status.good{background:var(--green-soft);color:var(--green)}.cf2-status.warn{background:var(--red-soft);color:var(--red)}
+.cf2-note{font-size:11px;color:var(--text-3);line-height:1.5;margin-top:10px}
+.cf2-field{display:flex;flex-direction:column;gap:7px;margin:14px 0}
+.cf2-field label{font-size:12px;font-weight:700;color:var(--text-2)}
+@media(max-width:370px){.cf2-actions{gap:5px}.cf2-action{font-size:10px}.nav-inner{gap:1px;padding:5px}.nav-btn{padding:8px 9px}}
+@media(prefers-reduced-motion:reduce){.cf2-action{transition:none}}
 </style>
 </head>
 <body>
@@ -286,7 +310,7 @@ textarea.input { min-height:60px; resize:none; }
     <div class="brand">
       <div class="brand-icon"><svg data-lucide="activity"></svg></div>
       <div>
-        <div class="brand-name">CashFlow</div>
+        <div class="brand-name">CashFlow <span style="font-size:9px;color:var(--blue);vertical-align:middle">2.0</span></div>
         <div class="brand-sub">Finance</div>
       </div>
     </div>
@@ -314,6 +338,7 @@ textarea.input { min-height:60px; resize:none; }
 <nav class="bottom-nav">
   <div class="nav-inner glass-strong">
     <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
+    <button class="pill nav-btn" data-tab="afford" onclick="switchTab('afford')"><svg data-lucide="wallet-cards"></svg><span>Can I Afford?</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
     <button class="pill nav-btn" data-tab="manage" onclick="switchTab('manage')"><svg data-lucide="target"></svg><span>Manage</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
@@ -1504,6 +1529,7 @@ function switchTab(tab) {
 function renderMain() {
   const el = document.getElementById("main-content");
   if (state.tab === "story") el.innerHTML = renderDashboard();
+  else if (state.tab === "afford") el.innerHTML = renderAffordPage();
   else if (state.tab === "calendar") el.innerHTML = renderCalendar();
   else if (state.tab === "manage") el.innerHTML = renderManage();
   else if (state.tab === "tools") el.innerHTML = renderTools();
@@ -1511,6 +1537,7 @@ function renderMain() {
   else if (state.tab === "people") el.innerHTML = renderPeople();
   el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in");
   refreshIcons();
+  if (state.tab === "afford") updateAffordCalculator();
 }
 
 /* ══════════════════════════════════════════════
@@ -2070,6 +2097,67 @@ function generateDailyInsights() {
    RENDER: DASHBOARD (Home) — Money status, Health Score,
    AI Recommendations, Goals progress, Recent activity.
    ══════════════════════════════════════════════ */
+
+/* The purchase planner is intentionally a transparent budgeting estimate,
+   not a bank-linked balance or investment recommendation. */
+const CF2_RESERVE_KEY = "cf2_planning_reserve";
+function cf2Reserve() {
+  const value = Number(Store.get(CF2_RESERVE_KEY, 500));
+  return Number.isFinite(value) && value >= 0 ? value : 500;
+}
+function computeAffordData() {
+  const total = TXS.reduce((sum, t) => sum + (t.type === "income" ? 1 : -1) * (Number(t.amount) || 0), 0);
+  const start = dayStr();
+  const endDate = new Date(); endDate.setDate(endDate.getDate() + 30);
+  const end = dayStr(endDate);
+  const bills = BILLS.filter(b => b.isActive && !b.isPaid && b.nextDue && b.nextDue >= start && b.nextDue <= end)
+    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const reserve = cf2Reserve();
+  return { total, bills, reserve, safe:total-bills-reserve };
+}
+function updateAffordCalculator() {
+  const purchaseEl=document.getElementById("cf2-purchase");
+  if (!purchaseEl) return;
+  const raw=Number(purchaseEl.value);
+  const purchase=Number.isFinite(raw) && raw>=0 ? raw : 0;
+  const d=computeAffordData();
+  const left=d.safe-purchase;
+  const result=document.getElementById("cf2-result");
+  const within=left>=0;
+  result.className="cf2-status "+(within?"good":"warn");
+  result.innerHTML=`${icon(within?"check-circle-2":"alert-triangle")}<div><strong>${within?"Within your planned spending amount":"Above your planned spending amount"}</strong><div>${within?`Estimated amount remaining: ${fmt(left)}.`:`Exceeds available room by ${fmt(-left)}.`}</div></div>`;
+  document.getElementById("cf2-progress").style.width=(d.safe>0?Math.min(100,purchase/d.safe*100):100)+"%";
+  document.getElementById("cf2-progress").style.background=within?"var(--green)":"var(--red)";
+  refreshIcons();
+}
+function updateAffordReserve() {
+  const el=document.getElementById("cf2-reserve");
+  const v=Number(el.value);
+  if (!Number.isFinite(v)||v<0) return;
+  Store.set(CF2_RESERVE_KEY,v);
+  const d=computeAffordData();
+  document.getElementById("cf2-safe").textContent=fmt(Math.max(0,d.safe));
+  updateAffordCalculator();
+}
+function renderAffordPage() {
+  const d=computeAffordData();
+  return `<div style="margin-bottom:22px"><p class="label">CashFlow planner</p><h1 class="heading-lg" style="margin:6px 0">Can I Afford This?</h1><p class="body-sm">See how a purchase might affect your budget before spending.</p></div>
+  <section class="cf2-panel">
+    <div class="cf2-section-title">${icon("calculator")} Your spending plan</div>
+    <div class="cf2-line"><span>Recorded net cash flow (all time)</span><strong>${fmt(d.total)}</strong></div>
+    <div class="cf2-line"><span>Unpaid upcoming bills (30 days)</span><strong>−${fmt(d.bills)}</strong></div>
+    <div class="cf2-field"><label for="cf2-reserve">Money to keep aside ($)</label><input id="cf2-reserve" class="input" type="number" min="0" step="0.01" value="${d.reserve}" oninput="updateAffordReserve()"></div>
+    <div class="cf2-line"><span>Estimated room to spend</span><strong id="cf2-safe">${fmt(Math.max(0,d.safe))}</strong></div>
+    <p class="cf2-note">This is a planning estimate, not a live account balance. It does not count unentered spending, unspecified starting balances, or recurring events that have not been recorded as bills.</p>
+  </section>
+  <section class="cf2-panel"><div class="cf2-section-title">${icon("shopping-bag")} Test a purchase</div>
+    <div class="cf2-field"><label for="cf2-purchase">Purchase amount ($)</label><input id="cf2-purchase" class="input" type="number" min="0" step="0.01" value="600" oninput="updateAffordCalculator()"></div>
+    <div class="balance-meter"><div class="balance-meter-fill" id="cf2-progress" style="width:0%"></div></div>
+    <div id="cf2-result" class="cf2-status good"></div>
+    <p class="cf2-note">For now, the planner assumes your transactions and bills are in USD. Multi-currency forecasting will require conversion rates and an account-based balance model.</p>
+  </section>
+  <button class="btn-primary" onclick="openModal()">${icon("plus")} Record a transaction</button>`;
+}
 function renderDashboard() {
   const health = computeFinancialHealthScore();
   const trend = computeHealthTrend();
@@ -2084,6 +2172,28 @@ function renderDashboard() {
   const nextBill = BILLS.filter(b => b.isActive && b.nextDue && b.nextDue >= today).sort((a,b) => a.nextDue.localeCompare(b.nextDue))[0];
   const recent = TXS.slice().sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0, 5);
 
+  const cf2 = computeAffordData();
+  const cf2Header = `<section class="cf2-hero">
+    <div class="cf2-kicker">${icon("wallet",'style="width:14px;height:14px;vertical-align:middle"')} CashFlow · Overview</div>
+    <div class="cf2-total">${fmt(balance)}</div>
+    <div class="cf2-flex">
+      <div class="cf2-hero-stat"><div class="cf2-kicker">Monthly income</div><strong>+${fmt(income)}</strong></div>
+      <div class="cf2-hero-stat"><div class="cf2-kicker">Monthly expenses</div><strong>−${fmt(expense)}</strong></div>
+    </div>
+  </section>
+  <div class="cf2-actions">
+    <button class="cf2-action" onclick="openModal()">${icon("plus-circle")}Add transaction</button>
+    <button class="cf2-action" onclick="switchTab('afford')">${icon("wallet-cards")}Can I afford?</button>
+    <button class="cf2-action" onclick="openSplitwiseHub()">${icon("users")}Split expense</button>
+  </div>
+  <section class="cf2-panel">
+    <div class="cf2-section-title">${icon("sparkles")} Plan ahead</div>
+    <div class="cf2-line"><span>Upcoming bills (30 days)</span><strong>${fmt(cf2.bills)}</strong></div>
+    <div class="cf2-line"><span>Planning reserve</span><strong>${fmt(cf2.reserve)}</strong></div>
+    <div class="cf2-line"><span>Estimated room to spend</span><strong style="color:${cf2.safe>=0?'var(--green)':'var(--red)'}">${fmt(Math.max(0,cf2.safe))}</strong></div>
+    <p class="cf2-note">Based on your manually recorded cash flow, upcoming bills and chosen reserve. Not a verified bank balance.</p>
+    <button class="pill active" style="margin-top:12px" onclick="switchTab('afford')">Check a purchase ${icon("arrow-right")}</button>
+  </section>`;
   const scoreColor = health.overall >= 75 ? "var(--green)" : health.overall >= 50 ? "var(--yellow, #e0a63c)" : "var(--red)";
   const breakdownRow = (label, val) => `<div style="flex:1;text-align:center">
     <div class="mono" style="font-size:.9375rem;font-weight:700;color:${val>=70?"var(--green)":val>=50?"var(--text-1)":"var(--red)"}">${val}</div>
@@ -2091,10 +2201,7 @@ function renderDashboard() {
   </div>`;
 
   return `
-  <div style="margin-bottom:16px">
-    <p class="label">Your money status</p>
-    <h2 class="heading-lg" style="margin-top:4px">${fmt(balance)}</h2>
-  </div>
+  ${cf2Header}
 
   <button class="card card-flat" style="width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;cursor:pointer" onclick="goToTodayDetail()">
     <div>
@@ -2110,7 +2217,7 @@ function renderDashboard() {
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
-      <div><div class="caption">Safe to spend (this month)</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px;color:${(income-expense)>=0?"var(--green)":"var(--red)"}">${fmt(income-expense)}</div></div>
+      <div><div class="caption">Monthly income minus expenses</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px;color:${(income-expense)>=0?"var(--green)":"var(--red)"}">${fmt(income-expense)}</div></div>
       <div><div class="caption">Upcoming bill</div><div class="mono" style="font-size:1.05rem;font-weight:700;margin-top:2px">${nextBill ? `${fmt(parseFloat(nextBill.amount))} · ${esc(nextBill.name)}` : "None due"}</div></div>
     </div>
   </div>
@@ -3149,7 +3256,7 @@ function renderAuthScreen() {
   const card = document.getElementById("auth-card");
   const brand = `<div class="brand" style="justify-content:center;margin-bottom:22px">
       <div class="brand-icon">${icon("activity")}</div>
-      <div><div class="brand-name">CashFlow</div><div class="brand-sub">Finance</div></div>
+      <div><div class="brand-name">CashFlow <span style="font-size:9px;color:var(--blue);vertical-align:middle">2.0</span></div><div class="brand-sub">Finance</div></div>
     </div>`;
   const msgs = `<p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
     <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>`;
