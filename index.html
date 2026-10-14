@@ -297,6 +297,20 @@ textarea.input { min-height:60px; resize:none; }
 .cf2-field label{font-size:12px;font-weight:700;color:var(--text-2)}
 @media(max-width:370px){.cf2-actions{gap:5px}.cf2-action{font-size:10px}.nav-inner{gap:1px;padding:5px}.nav-btn{padding:8px 9px}}
 @media(prefers-reduced-motion:reduce){.cf2-action{transition:none}}
+
+/* CashFlow Phase 2 refinements */
+.cf2-icon-action{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);flex-shrink:0}
+.cf2-icon-action:hover,.cf2-icon-action:focus-visible{color:var(--blue);outline:2px solid var(--border-focus)}
+.cf2-icon-action svg{width:15px;height:15px}
+.cf2-banner{border-radius:14px;padding:12px 14px;font-size:.78rem;line-height:1.6;margin:10px 0;background:var(--blue-soft);color:var(--text-2)}
+.cf2-banner.warn{background:var(--amber-soft)}
+.cf2-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cf2-edit-grid label{display:block;font-size:.7rem;margin-bottom:5px;color:var(--text-2)}
+.cf2-form-field{margin-bottom:13px}
+.cf2-form-field label{display:block;font-size:.7rem;margin-bottom:5px;color:var(--text-2)}
+.cf2-actions .cf2-action{min-height:66px}
+@media(max-width:420px){.cf2-edit-grid{grid-template-columns:1fr}.cf2-hero{padding:20px}.cf2-total{font-size:1.8rem}.cf2-actions{gap:8px}}
+@media(prefers-reduced-motion:reduce){.fade-in{animation:none!important}.card,.cf2-action{transition:none!important}html{scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -388,6 +402,12 @@ textarea.input { min-height:60px; resize:none; }
     </div>
     <button class="btn-primary" id="tx-submit" onclick="modalSubmit()" disabled>Add Expense</button>
   </div>
+</div>
+
+<!-- Phase 2: Edit Transaction -->
+<div class="modal-overlay" id="cf2-edit-overlay" onclick="cf2CloseEdit()"></div>
+<div class="modal-box" id="cf2-edit-box">
+  <div class="modal-inner glass-strong" id="cf2-edit-inner"></div>
 </div>
 
 <!-- Split Detail Modal -->
@@ -627,6 +647,8 @@ const state = {
   donutCursor: new Date(),
   exportType: "all",
   exportPreset: "month",
+  exportStart: "",
+  exportEnd: "",
   dayDetailOpen: false,
 };
 const modalState = { type: "expense", category: "", extra: false, split: { enabled:false, mode:"equal", friendIds:[], exact:{}, addingFriend:false }, paymentMethod: { mode:null, custom:"" } };
@@ -641,6 +663,21 @@ async function addTransaction(d) {
   TXS.unshift(mapTx(data));
   return data;
 }
+async function cf2UpdateTransaction(id, values) {
+  const amount = Number(values.amount);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000000000) throw new Error("Enter an amount greater than zero.");
+  if (!EXPENSE_CATS.concat(INCOME_CATS).some(c => c.key === values.category)) throw new Error("Select a valid category.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date) || Number.isNaN(new Date(values.date+"T12:00:00").valueOf())) throw new Error("Choose a valid date.");
+  const userId = await getUserId();
+  if (!userId) throw new Error("Sign in again to save your changes.");
+  const payload = {type:values.type,amount,category:values.category,currency:values.currency,description:values.description.trim(),notes:values.notes.trim(),payment_method:values.paymentMethod.trim()||null,date:new Date(values.date+"T12:00:00").toISOString()};
+  const {data,error}=await sb.from("transactions").update(payload).eq("id",id).eq("user_id",userId).select().single();
+  if (error) throw error;
+  const index=TXS.findIndex(t=>String(t.id)===String(id));
+  if (index!==-1) TXS[index]=mapTx(data);
+  return data;
+}
+
 async function deleteTransaction(id) {
   const { error } = await sb.from("transactions").delete().eq("id", id);
   if (error) { alert("Couldn't delete: " + error.message); return; }
@@ -1617,9 +1654,9 @@ function txRowHtml(t) {
   if (split) {
     const parts = PARTICIPANTS.filter(p => p.splitId === split.id && !p.isPayer);
     const settled = parts.filter(p => p.status === "settled").length;
-    splitBadge = `<span class="tx-split-badge" onclick="event.stopPropagation();openSplitDetail(${t.id})">${icon("users",'style="width:9px;height:9px"')} ${settled}/${parts.length} settled</span>`;
+    splitBadge = `<span class="tx-split-badge" onclick='event.stopPropagation();openSplitDetail(${JSON.stringify(t.id)})'>${icon("users",'style="width:9px;height:9px"')} ${settled}/${parts.length} settled</span>`;
   } else if (t.type === "expense") {
-    splitBadge = `<span class="tx-split-badge" style="background:var(--surface-2);color:var(--text-3)" onclick="event.stopPropagation();onSplitTxClick(${t.id})">${icon("users",'style="width:9px;height:9px"')} Split</span>`;
+    splitBadge = `<span class="tx-split-badge" style="background:var(--surface-2);color:var(--text-3)" onclick='event.stopPropagation();onSplitTxClick(${JSON.stringify(t.id)})'>${icon("users",'style="width:9px;height:9px"')} Split</span>`;
   }
   return `
   <div class="tx-row card-flat">
@@ -1632,9 +1669,43 @@ function txRowHtml(t) {
       <div class="tx-meta"><span>${esc(cat.label)}</span><span>·</span><span>${time}</span>${t.paymentMethod?`<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--surface-2);color:var(--text-3)">${esc(t.paymentMethod.toUpperCase())}</span>`:""}${t.isRecurring ? '<span style="padding:1px 5px;border-radius:4px;font-size:8px;font-weight:700;background:var(--blue-soft);color:var(--blue)">AUTO</span>' : ""}${splitBadge}</div>
     </div>
     <span class="tx-amt" style="color:${isInc ? "var(--green)" : "var(--red)"}">${isInc?"+":"-"}${fmt(amt, t.currency)}</span>
-    <button class="tx-del" onclick="onDeleteTx(${t.id})">${icon("trash-2")}</button>
+    <button class="cf2-icon-action" aria-label="Edit transaction" title="Edit" onclick='cf2OpenEdit(${JSON.stringify(t.id)})'>${icon("pencil")}</button>
+    <button class="tx-del" aria-label="Delete transaction" onclick='onDeleteTx(${JSON.stringify(t.id)})'>${icon("trash-2")}</button>
   </div>`;
 }
+let cf2EditingId=null;
+function cf2CloseEdit(){cf2EditingId=null;document.getElementById("cf2-edit-overlay").classList.remove("open");document.getElementById("cf2-edit-box").classList.remove("open");}
+function cf2OpenEdit(id){
+  const t=TXS.find(r=>String(r.id)===String(id));if(!t)return;
+  cf2EditingId=t.id;
+  const opts=(type,selected)=> (type==="income"?INCOME_CATS:EXPENSE_CATS).map(c=>`<option value="${esc(c.key)}" ${c.key===selected?"selected":""}>${esc(c.label)}</option>`).join("");
+  const inner=document.getElementById("cf2-edit-inner");
+  inner.innerHTML=`<div class="modal-head"><h2 class="heading-md">Edit transaction</h2><button class="icon-btn" onclick="cf2CloseEdit()" aria-label="Close edit">${icon("x")}</button></div>
+    ${SPLITS.some(s=>String(s.transactionId)===String(id))?'<div class="cf2-banner warn">This transaction has a split. Changing its amount will not recalculate what friends owe. Settle or update the split separately.</div>':""}
+    <form onsubmit="cf2SaveEdit(event)">
+      <div class="cf2-edit-grid"><div class="cf2-form-field"><label for="cf2-edit-type">Type</label><select class="input" id="cf2-edit-type" onchange="cf2EditCategoryOptions()"><option value="expense" ${t.type==="expense"?"selected":""}>Expense</option><option value="income" ${t.type==="income"?"selected":""}>Income</option></select></div>
+      <div class="cf2-form-field"><label for="cf2-edit-amount">Amount</label><input class="input" id="cf2-edit-amount" type="number" required min="0.01" step="0.01" value="${Number(t.amount)}"></div></div>
+      <div class="cf2-edit-grid"><div class="cf2-form-field"><label for="cf2-edit-category">Category</label><select class="input" id="cf2-edit-category">${opts(t.type,t.category)}</select></div>
+      <div class="cf2-form-field"><label for="cf2-edit-currency">Currency</label><select class="input" id="cf2-edit-currency">${CURRENCIES.map(c=>`<option value="${c.code}" ${c.code===t.currency?"selected":""}>${c.code}</option>`).join("")}</select></div></div>
+      <div class="cf2-form-field"><label for="cf2-edit-date">Date</label><input class="input" id="cf2-edit-date" type="date" required value="${esc(t.date.slice(0,10))}"></div>
+      <div class="cf2-form-field"><label for="cf2-edit-desc">Description</label><input class="input" id="cf2-edit-desc" maxlength="240" value="${esc(t.description)}"></div>
+      <div class="cf2-form-field"><label for="cf2-edit-method">Payment method</label><input class="input" id="cf2-edit-method" maxlength="80" value="${esc(t.paymentMethod)}" placeholder="Cash, debit, credit..."></div>
+      <div class="cf2-form-field"><label for="cf2-edit-notes">Notes</label><textarea class="input" id="cf2-edit-notes" maxlength="2000">${esc(t.notes)}</textarea></div>
+      <div class="cf2-banner" id="cf2-edit-error" style="display:none"></div>
+      <button id="cf2-edit-save" class="btn-primary" type="submit">Save changes</button>
+    </form>`;
+  document.getElementById("cf2-edit-overlay").classList.add("open");document.getElementById("cf2-edit-box").classList.add("open");refreshIcons();
+}
+function cf2EditCategoryOptions(){const type=document.getElementById("cf2-edit-type").value;document.getElementById("cf2-edit-category").innerHTML=(type==="income"?INCOME_CATS:EXPENSE_CATS).map(c=>`<option value="${c.key}">${esc(c.label)}</option>`).join("");}
+async function cf2SaveEdit(e){
+  e.preventDefault();if(cf2EditingId===null)return;
+  const v=id=>document.getElementById(id).value;
+  const values={type:v("cf2-edit-type"),amount:v("cf2-edit-amount"),category:v("cf2-edit-category"),currency:v("cf2-edit-currency"),date:v("cf2-edit-date"),description:v("cf2-edit-desc"),notes:v("cf2-edit-notes"),paymentMethod:v("cf2-edit-method")};
+  const button=document.getElementById("cf2-edit-save");button.disabled=true;button.textContent="Saving...";
+  try{await cf2UpdateTransaction(cf2EditingId,values);cf2CloseEdit();renderMain();}
+  catch(err){const el=document.getElementById("cf2-edit-error");el.style.display="block";el.textContent="Could not save: "+(err.message||String(err));button.disabled=false;button.textContent="Save changes";}
+}
+
 async function onDeleteTx(id) { if (!confirm("Delete this transaction?")) return; await deleteTransaction(id); renderMain(); }
 
 function openSplitDetail(txId) {
@@ -1935,8 +2006,8 @@ function computeFinancialHealthScore(monthOverride) {
   const lastM = monthStr(new Date(refDate.getFullYear(), refDate.getMonth()-1, 1));
   const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
   const lastTxs = TXS.filter(t => t.date.slice(0,7) === lastM);
-  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
-  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const income = thisTxs.filter(t=>t.currency==="USD"&&t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.currency==="USD"&&t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
   const lastExpense = lastTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
 
   // Savings rate: (income - expense) / income, scaled to 0-100
@@ -2020,7 +2091,7 @@ function generateInsights() {
   const lastM = monthStr(new Date(now.getFullYear(), now.getMonth()-1, 1));
   const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
   const lastTxs = TXS.filter(t => t.date.slice(0,7) === lastM);
-  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const income = thisTxs.filter(t=>t.currency==="USD"&&t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
   const today = dayStr();
 
   // Overspending per category vs last month
@@ -2062,8 +2133,8 @@ function generateDailyInsights() {
   const now = new Date();
   const thisM = monthStr(now);
   const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
-  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
-  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const income = thisTxs.filter(t=>t.currency==="USD"&&t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.currency==="USD"&&t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
 
   const nextIncome = RECURRING.filter(r => r.isActive && r.type==="income" && r.nextDue).sort((a,b)=>a.nextDue.localeCompare(b.nextDue))[0];
   if (nextIncome) insights.push(`You have ${fmt(income-expense)} available until your next paycheck on ${new Date(nextIncome.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})}.`);
@@ -2105,15 +2176,25 @@ function cf2Reserve() {
   const value = Number(Store.get(CF2_RESERVE_KEY, 500));
   return Number.isFinite(value) && value >= 0 ? value : 500;
 }
+function cf2StartBalance() {
+  const raw=Store.get("cf2_opening_balance_"+(_cachedUserId||"unknown"),null);
+  return raw===null?null:(Number.isFinite(Number(raw))?Number(raw):null);
+}
+function cf2UsdNet(){return TXS.filter(t=>t.currency==="USD").reduce((sum,t)=>sum+(t.type==="income"?1:-1)*(Number(t.amount)||0),0);}
 function computeAffordData() {
-  const total = TXS.reduce((sum, t) => sum + (t.type === "income" ? 1 : -1) * (Number(t.amount) || 0), 0);
-  const start = dayStr();
-  const endDate = new Date(); endDate.setDate(endDate.getDate() + 30);
-  const end = dayStr(endDate);
-  const bills = BILLS.filter(b => b.isActive && !b.isPaid && b.nextDue && b.nextDue >= start && b.nextDue <= end)
-    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const reserve = cf2Reserve();
-  return { total, bills, reserve, safe:total-bills-reserve };
+  const opening=cf2StartBalance();
+  const recorded=cf2UsdNet();
+  const total=opening===null?null:opening+recorded;
+  const start=dayStr();const endDate=new Date();endDate.setDate(endDate.getDate()+30);const end=dayStr(endDate);
+  const bills=BILLS.filter(b=>b.isActive&&!b.isPaid&&b.nextDue&&b.nextDue>=start&&b.nextDue<=end&&b.currency==="USD").reduce((sum,b)=>sum+(Number(b.amount)||0),0);
+  const reserve=cf2Reserve();
+  return {opening,recorded,total,bills,reserve,safe:total===null?null:total-bills-reserve,excluded:TXS.filter(t=>t.currency!=="USD").length};
+}
+function cf2SaveOpening(){
+ const el=document.getElementById("cf2-opening");if(!el)return;
+ if(el.value.trim()===""){Store.set("cf2_opening_balance_"+(_cachedUserId||"unknown"),null);renderMain();return;}
+ const v=Number(el.value);if(!Number.isFinite(v)||Math.abs(v)>1000000000000){alert("Enter a valid starting balance.");return;}
+ Store.set("cf2_opening_balance_"+(_cachedUserId||"unknown"),v);renderMain();
 }
 function updateAffordCalculator() {
   const purchaseEl=document.getElementById("cf2-purchase");
@@ -2123,9 +2204,9 @@ function updateAffordCalculator() {
   const d=computeAffordData();
   const left=d.safe-purchase;
   const result=document.getElementById("cf2-result");
-  const within=left>=0;
+  const within=d.safe!==null&&left>=0;
   result.className="cf2-status "+(within?"good":"warn");
-  result.innerHTML=`${icon(within?"check-circle-2":"alert-triangle")}<div><strong>${within?"Within your planned spending amount":"Above your planned spending amount"}</strong><div>${within?`Estimated amount remaining: ${fmt(left)}.`:`Exceeds available room by ${fmt(-left)}.`}</div></div>`;
+  result.innerHTML=d.safe===null?`${icon("info")}<div><strong>Set a starting balance</strong><div>Add your starting USD balance above to enable purchase estimates.</div></div>`:`${icon(within?"check-circle-2":"alert-triangle")}<div><strong>${within?"Within your planned spending amount":"Above your planned spending amount"}</strong><div>${within?`Estimated amount remaining: ${fmt(left)}.`:`Exceeds available room by ${fmt(-left)}.`}</div></div>`;
   document.getElementById("cf2-progress").style.width=(d.safe>0?Math.min(100,purchase/d.safe*100):100)+"%";
   document.getElementById("cf2-progress").style.background=within?"var(--green)":"var(--red)";
   refreshIcons();
@@ -2136,7 +2217,7 @@ function updateAffordReserve() {
   if (!Number.isFinite(v)||v<0) return;
   Store.set(CF2_RESERVE_KEY,v);
   const d=computeAffordData();
-  document.getElementById("cf2-safe").textContent=fmt(Math.max(0,d.safe));
+  document.getElementById("cf2-safe").textContent=d.safe===null?"Set starting balance":fmt(Math.max(0,d.safe));
   updateAffordCalculator();
 }
 function renderAffordPage() {
@@ -2144,11 +2225,13 @@ function renderAffordPage() {
   return `<div style="margin-bottom:22px"><p class="label">CashFlow planner</p><h1 class="heading-lg" style="margin:6px 0">Can I Afford This?</h1><p class="body-sm">See how a purchase might affect your budget before spending.</p></div>
   <section class="cf2-panel">
     <div class="cf2-section-title">${icon("calculator")} Your spending plan</div>
-    <div class="cf2-line"><span>Recorded net cash flow (all time)</span><strong>${fmt(d.total)}</strong></div>
+    <div class="cf2-field"><label for="cf2-opening">Starting USD balance (optional)</label><input id="cf2-opening" class="input" type="number" step="0.01" placeholder="Enter your balance before these records" value="${d.opening===null?'':d.opening}"><button class="pill active" style="margin-top:8px" onclick="cf2SaveOpening()">Save starting balance</button></div>
+    <div class="cf2-line"><span>Recorded USD cash flow (all time)</span><strong>${fmt(d.recorded)}</strong></div>
+    <div class="cf2-line"><span>Estimated USD ledger balance</span><strong>${d.total===null?'Not configured':fmt(d.total)}</strong></div>
     <div class="cf2-line"><span>Unpaid upcoming bills (30 days)</span><strong>−${fmt(d.bills)}</strong></div>
     <div class="cf2-field"><label for="cf2-reserve">Money to keep aside ($)</label><input id="cf2-reserve" class="input" type="number" min="0" step="0.01" value="${d.reserve}" oninput="updateAffordReserve()"></div>
-    <div class="cf2-line"><span>Estimated room to spend</span><strong id="cf2-safe">${fmt(Math.max(0,d.safe))}</strong></div>
-    <p class="cf2-note">This is a planning estimate, not a live account balance. It does not count unentered spending, unspecified starting balances, or recurring events that have not been recorded as bills.</p>
+    <div class="cf2-line"><span>Estimated room to spend</span><strong id="cf2-safe">${d.safe===null?"Set starting balance":fmt(Math.max(0,d.safe))}</strong></div>
+    <p class="cf2-note">Starting balance is stored in this browser, not synced to Supabase. Use the balance immediately before your recorded transactions began; do not enter today’s balance or earlier transactions may be double-counted. Estimates exclude unrecorded spending and are not live bank balances. ${d.excluded?`${d.excluded} non-USD transaction(s) excluded.`:""}</p>
   </section>
   <section class="cf2-panel"><div class="cf2-section-title">${icon("shopping-bag")} Test a purchase</div>
     <div class="cf2-field"><label for="cf2-purchase">Purchase amount ($)</label><input id="cf2-purchase" class="input" type="number" min="0" step="0.01" value="600" oninput="updateAffordCalculator()"></div>
@@ -2165,9 +2248,9 @@ function renderDashboard() {
   const now = new Date();
   const thisM = monthStr(now);
   const thisTxs = TXS.filter(t => t.date.slice(0,7) === thisM);
-  const income = thisTxs.filter(t=>t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
-  const expense = thisTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
-  const balance = TXS.reduce((s,t) => s + (t.type==="income" ? parseFloat(t.amount) : -parseFloat(t.amount)), 0);
+  const income = thisTxs.filter(t=>t.currency==="USD"&&t.type==="income").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const expense = thisTxs.filter(t=>t.currency==="USD"&&t.type==="expense").reduce((s,t)=>s+parseFloat(t.amount),0);
+  const balance = cf2UsdNet();
   const today = dayStr();
   const nextBill = BILLS.filter(b => b.isActive && b.nextDue && b.nextDue >= today).sort((a,b) => a.nextDue.localeCompare(b.nextDue))[0];
   const recent = TXS.slice().sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0, 5);
@@ -2175,7 +2258,7 @@ function renderDashboard() {
   const cf2 = computeAffordData();
   const cf2Header = `<section class="cf2-hero">
     <div class="cf2-kicker">${icon("wallet",'style="width:14px;height:14px;vertical-align:middle"')} CashFlow · Overview</div>
-    <div class="cf2-total">${fmt(balance)}</div>
+    <div class="cf2-total">${cf2.total===null?fmt(balance):fmt(cf2.total)}</div><div class="cf2-kicker">${cf2.total===null?"Recorded USD net flow · Not a bank balance":"Estimated USD ledger balance · Not bank-linked"}</div>
     <div class="cf2-flex">
       <div class="cf2-hero-stat"><div class="cf2-kicker">Monthly income</div><strong>+${fmt(income)}</strong></div>
       <div class="cf2-hero-stat"><div class="cf2-kicker">Monthly expenses</div><strong>−${fmt(expense)}</strong></div>
@@ -2190,8 +2273,8 @@ function renderDashboard() {
     <div class="cf2-section-title">${icon("sparkles")} Plan ahead</div>
     <div class="cf2-line"><span>Upcoming bills (30 days)</span><strong>${fmt(cf2.bills)}</strong></div>
     <div class="cf2-line"><span>Planning reserve</span><strong>${fmt(cf2.reserve)}</strong></div>
-    <div class="cf2-line"><span>Estimated room to spend</span><strong style="color:${cf2.safe>=0?'var(--green)':'var(--red)'}">${fmt(Math.max(0,cf2.safe))}</strong></div>
-    <p class="cf2-note">Based on your manually recorded cash flow, upcoming bills and chosen reserve. Not a verified bank balance.</p>
+    <div class="cf2-line"><span>Estimated room to spend</span><strong style="color:${cf2.safe>=0?'var(--green)':'var(--red)'}">${cf2.safe===null?"Set starting balance":fmt(Math.max(0,cf2.safe))}</strong></div>
+    <p class="cf2-note">Based on USD records, eligible upcoming USD bills and your reserve. Starting balance is browser-only. Not a verified bank balance.</p>
     <button class="pill active" style="margin-top:12px" onclick="switchTab('afford')">Check a purchase ${icon("arrow-right")}</button>
   </section>`;
   const scoreColor = health.overall >= 75 ? "var(--green)" : health.overall >= 50 ? "var(--yellow, #e0a63c)" : "var(--red)";
@@ -2254,9 +2337,10 @@ function renderDashboard() {
 
   <p class="label" style="margin:16px 0 8px">Recent activity</p>
   ${recent.length === 0 ? emptyBlock("activity", "No transactions yet", "Add your first transaction to get started") :
-    recent.map(t => `<div class="list-item card-flat" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    recent.map(t => `<div class="list-item card-flat" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px">
       <span style="font-size:.8125rem">${esc(t.description || getCat(t.category,t.type).label)}</span>
-      <span class="mono" style="font-size:.8125rem;font-weight:700;color:${t.type==="income"?"var(--green)":"var(--red)"}">${t.type==="income"?"+":"-"}${fmt(parseFloat(t.amount))}</span>
+      <span class="mono" style="font-size:.8125rem;font-weight:700;color:${t.type==="income"?"var(--green)":"var(--red)"}">${t.type==="income"?"+":"-"}${fmt(parseFloat(t.amount),t.currency)}</span>
+      <button class="cf2-icon-action" title="Edit transaction" aria-label="Edit transaction" onclick='cf2OpenEdit(${JSON.stringify(t.id)})'>${icon("pencil")}</button>
     </div>`).join("")}
   `;
 }
@@ -2514,7 +2598,8 @@ function renderDayDetail() {
         <div class="caption" style="margin-top:1px">${esc(getCat(t.category,t.type).label)}</div>
       </div>
       <span class="mono" style="font-size:.8125rem;font-weight:700;margin-right:10px;color:${t.type==="income"?"var(--green)":"var(--red)"}">${t.type==="income"?"+":"-"}${fmt(parseFloat(t.amount))}</span>
-      <button class="icon-btn" style="width:30px;height:30px" onclick="onDeleteTx(${t.id})">${icon("trash-2",'style="width:14px;height:14px;color:var(--red)"')}</button>
+      <button class="cf2-icon-action" title="Edit transaction" aria-label="Edit transaction" onclick='cf2OpenEdit(${JSON.stringify(t.id)})'>${icon("pencil")}</button>
+      <button class="icon-btn" style="width:30px;height:30px" onclick='onDeleteTx(${JSON.stringify(t.id)})'>${icon("trash-2",'style="width:14px;height:14px;color:var(--red)"')}</button>
     </div>`).join("")}
   `;
 }
@@ -2840,8 +2925,8 @@ function renderTools() {
       ${presets.map(([k,l]) => `<button class="pill" style="padding:6px 12px;font-size:.6875rem;${state.exportPreset===k?"background:var(--grad-1);color:#fff":""}" onclick="setExportPreset('${k}')">${l}</button>`).join("")}
     </div>
     ${state.exportPreset==="custom" ? `<div class="grid-2">
-      <input class="input" id="tool-start" type="date" style="font-size:.75rem" onchange="renderMain()">
-      <input class="input" id="tool-end" type="date" style="font-size:.75rem" onchange="renderMain()">
+      <input class="input" id="tool-start" type="date" style="font-size:.75rem" aria-label="Export start date" value="${esc(state.exportStart)}" onchange="onExportDateChange()">
+      <input class="input" id="tool-end" type="date" style="font-size:.75rem" aria-label="Export end date" value="${esc(state.exportEnd)}" onchange="onExportDateChange()">
     </div>` : ""}
   </div>
   <div class="card" style="padding:16px;margin-bottom:16px">
@@ -2865,14 +2950,32 @@ function renderTools() {
 }
 function setExportPreset(p) { state.exportPreset = p; renderMain(); }
 function setExportType(t) { state.exportType = t; renderMain(); }
+function onExportDateChange() {
+  // Do not re-render the date inputs: doing so previously erased both selections.
+  state.exportStart = document.getElementById("tool-start")?.value || "";
+  state.exportEnd = document.getElementById("tool-end")?.value || "";
+}
+function validateExportRange() {
+  if (state.exportPreset !== "custom") return true;
+  onExportDateChange();
+  if (!state.exportStart || !state.exportEnd) {
+    alert("Please select both a start date and an end date before downloading.");
+    return false;
+  }
+  if (state.exportStart > state.exportEnd) {
+    alert("Start date must be on or before end date.");
+    return false;
+  }
+  return true;
+}
 function getExportRange() {
   const now = new Date();
   if (state.exportPreset === "month") { const s = new Date(now.getFullYear(), now.getMonth(), 1); return { start: dayStr(s), end: dayStr(now), label: now.toLocaleDateString("en-US",{month:"long",year:"numeric"}) }; }
   if (state.exportPreset === "lastMonth") { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); const e = new Date(now.getFullYear(), now.getMonth(), 0); return { start: dayStr(s), end: dayStr(e), label: s.toLocaleDateString("en-US",{month:"long",year:"numeric"}) }; }
   if (state.exportPreset === "last3") { const s = new Date(now.getFullYear(), now.getMonth()-2, 1); return { start: dayStr(s), end: dayStr(now), label: `${s.toLocaleDateString("en-US",{month:"short",year:"numeric"})} \u2013 ${now.toLocaleDateString("en-US",{month:"short",year:"numeric"})}` }; }
-  const start = document.getElementById("tool-start") ? document.getElementById("tool-start").value : "";
-  const end = document.getElementById("tool-end") ? document.getElementById("tool-end").value : "";
-  return { start, end, label: start && end ? `${start} to ${end}` : "All time" };
+  const start = state.exportStart;
+  const end = state.exportEnd;
+  return { start, end, label: start && end ? `${start} to ${end}` : "Custom range" };
 }
 function getFilteredTxs() {
   const { start, end } = getExportRange();
@@ -2889,8 +2992,17 @@ function categoryBreakdown(txs, type) {
   txs.filter(t => t.type === type).forEach(t => { const label = getCat(t.category, type).label; m[label] = (m[label]||0) + parseFloat(t.amount); });
   return Object.entries(m).sort((a,b) => b[1]-a[1]);
 }
-function downloadBlob(blob, name) { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); }
+function downloadBlob(blob, name) {
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = u; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
+}
 function exportCSVFile() {
+  if (!validateExportRange()) return;
   const txs = getFilteredTxs();
   const range = getExportRange();
   const meta = [[`"${exportReportTitle()}"`], [`"Period: ${range.label}"`], [`"Exported: ${new Date().toLocaleDateString()}"`], [""]];
@@ -2900,6 +3012,7 @@ function exportCSVFile() {
   downloadBlob(new Blob([csv], {type:"text/csv"}), `cashflow-${state.exportType}-${range.start||"all"}.csv`);
 }
 function exportExcel() {
+  if (!validateExportRange()) return;
   const txs = getFilteredTxs();
   const range = getExportRange();
   const wb = XLSX.utils.book_new();
@@ -2915,6 +3028,7 @@ function exportExcel() {
   XLSX.writeFile(wb, `cashflow-${state.exportType}-${range.start||"all"}.xlsx`);
 }
 async function exportPDF() {
+  if (!validateExportRange()) return;
   const txs = getFilteredTxs();
   const range = getExportRange();
   const { jsPDF } = window.jspdf;
@@ -3214,7 +3328,7 @@ function openModal() {
 function closeModal() { document.getElementById("modal-overlay").classList.remove("open"); document.getElementById("modal-box").classList.remove("open"); }
 async function modalSubmit() {
   const amount = document.getElementById("tx-amount").value, category = modalState.category;
-  if (!amount || !category) return;
+  if (!amount || !category || !Number.isFinite(Number(amount)) || Number(amount)<=0) { alert("Enter an amount greater than zero."); return; }
   if (!paymentMethodValid()) { alert("Pick a payment method first."); return; }
   const sp = modalState.split;
   const calc = computeSplitCalc();
@@ -3229,6 +3343,7 @@ async function modalSubmit() {
       participants: calc.participants.map(p => ({ friendId: p.isPayer ? null : p.id, isPayer: p.isPayer, displayName: p.name, amountOwed: calc.amounts[p.id]||0, status: p.isPayer ? "settled" : "pending" })),
     });
   }
+  if (!txRow) { btn.innerHTML = orig; btn.disabled = false; return; }
   closeModal(); btn.innerHTML = orig; renderMain();
 }
 document.addEventListener("input", (e) => { if (e.target && e.target.id === "tx-amount") { updateSubmitState(); renderSplitSection(); } });
