@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CashFlow 2.0 — Personal Finance</title>
+<title>CashFlow</title>
 <style>
 @font-face { font-family: "SF"; src: local("Inter"), local("-apple-system"), local("BlinkMacSystemFont"); }
 :root {
@@ -311,6 +311,15 @@ textarea.input { min-height:60px; resize:none; }
 .cf2-actions .cf2-action{min-height:66px}
 @media(max-width:420px){.cf2-edit-grid{grid-template-columns:1fr}.cf2-hero{padding:20px}.cf2-total{font-size:1.8rem}.cf2-actions{gap:8px}}
 @media(prefers-reduced-motion:reduce){.fade-in{animation:none!important}.card,.cf2-action{transition:none!important}html{scroll-behavior:auto!important}}
+
+/* CashFlow 2.1: accessible interactive layout improvements */
+.cf21-metric{border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cf21-metric span{font-size:11px;color:var(--text-3)}
+.cf21-metric strong{font-size:16px;overflow-wrap:anywhere}
+.cf21-forecast-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:540px){.cf21-forecast-grid{grid-template-columns:1fr}.cf2-action{min-height:52px}.icon-btn,.cf2-icon-action{min-width:38px;min-height:38px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+:focus-visible{outline:2px solid var(--blue)!important;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -324,8 +333,7 @@ textarea.input { min-height:60px; resize:none; }
     <div class="brand">
       <div class="brand-icon"><svg data-lucide="activity"></svg></div>
       <div>
-        <div class="brand-name">CashFlow <span style="font-size:9px;color:var(--blue);vertical-align:middle">2.0</span></div>
-        <div class="brand-sub">Finance</div>
+        <div class="brand-name">CashFlow</div>
       </div>
     </div>
     <div class="hdr-actions">
@@ -601,7 +609,11 @@ async function loadAllFromSupabase() {
     sb.from("split_participants").select("*"),
     sb.from("people").select("*").order("name", { ascending:true }),
   ]);
-  [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes, peopleRes].forEach(r => { if (r.error) console.error("Supabase load error:", r.error); });
+  cf21LoadWarnings=[];
+  const tableNames=['transactions','budgets','goals','bills','recurring','friends','expense_splits','split_participants','people'];
+  [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes, peopleRes].forEach((r,i) => {
+    if(r.error){console.error('Supabase load error:',tableNames[i],r.error);cf21LoadWarnings.push(tableNames[i]+': '+r.error.message);}
+  });
   TXS = (txRes.data||[]).map(mapTx);
   BUDGETS = (budRes.data||[]).map(mapBudget);
   GOALS = (goalRes.data||[]).map(mapGoal);
@@ -635,7 +647,11 @@ let PEOPLE = [];
 let SPLITS = [];
 let PARTICIPANTS = [];
 let THEME = Store.get("theme", "dark");
-let CHAT_MSGS = Store.get("chatHistory", null) || [{ role:"assistant", html:'<span class="cb-line">Hi! I\'m your finance assistant. Ask me anything about your spending, budgets, goals, or bills \u2014 all answered instantly from your own data, nothing leaves this device.</span>' }];
+function cf21GetChatHistory(){
+  return _cachedUserId ? Store.get('chatHistory_'+_cachedUserId,null) : null;
+}
+function cf21SaveChatHistory(){if(_cachedUserId)Store.set('chatHistory_'+_cachedUserId,CHAT_MSGS);}
+let CHAT_MSGS = cf21GetChatHistory() || [{ role:"assistant", html:'<span class="cb-line">Hi! I\'m your finance assistant. Ask me anything about your spending, budgets, goals, or bills \u2014 all answered instantly from your own data, nothing leaves this device.</span>' }];
 
 /* ══════════════════════════════════════════════
    APP STATE
@@ -1312,6 +1328,7 @@ function answerFinanceQuestion(qRaw) {
 // Client ledger: work performed is NOT income. Only collected payments enter TXS.
 let CLIENT_WORK = [];
 let clientLedgerError = "";
+let cf21LoadWarnings = [];
 /* Embedded database setup; run manually in Supabase SQL Editor (never from browser). */
 const CLIENT_WORK_SETUP_SQL = "-- CashFlow 2.0: daily client earnings ledger\n-- Run once in Supabase Dashboard -> SQL Editor, while logged in as project owner.\n-- This table records money EARNED but not yet necessarily RECEIVED.\n-- Real payments continue to be written to the existing public.transactions table.\n\ncreate table if not exists public.client_work_entries (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references auth.users(id) on delete cascade,\n  person_id text not null,\n  work_date date not null,\n  amount numeric(14,2) not null check (amount > 0),\n  notes text not null default '',\n  created_at timestamptz not null default now()\n);\n\ncreate index if not exists client_work_entries_user_date_idx\n  on public.client_work_entries (user_id, work_date desc);\n\nalter table public.client_work_entries enable row level security;\n\n-- Securely isolate work entries by signed-in user.\ndrop policy if exists \"client_work_select_own\" on public.client_work_entries;\ncreate policy \"client_work_select_own\" on public.client_work_entries\n  for select to authenticated using (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_insert_own\" on public.client_work_entries;\ncreate policy \"client_work_insert_own\" on public.client_work_entries\n  for insert to authenticated with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_update_own\" on public.client_work_entries;\ncreate policy \"client_work_update_own\" on public.client_work_entries\n  for update to authenticated using (user_id = (select auth.uid()))\n  with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_delete_own\" on public.client_work_entries;\ncreate policy \"client_work_delete_own\" on public.client_work_entries\n  for delete to authenticated using (user_id = (select auth.uid()));\n\ngrant select, insert, update, delete on public.client_work_entries to authenticated;\n";
 function cwCopySetupSQL(){
@@ -1352,12 +1369,12 @@ function renderPeople(){
  <div class="card" style="padding:18px;margin-bottom:16px"><h3 class="heading-md" style="margin-bottom:6px">Record daily work</h3><p class="body-sm" style="margin-bottom:14px">Enter the amount your client owes for work done on that date.</p><form onsubmit="cwSaveWork(event)"><label class="label" for="cw-work-person">Client</label><select id="cw-work-person" class="input" required style="margin:6px 0 12px"><option value="">Choose client</option>${cwOptionList()}</select><div class="grid-2"><div><label class="label" for="cw-work-date">Work date</label><input id="cw-work-date" type="date" value="${dayStr()}" class="input" required style="margin-top:6px"></div><div><label class="label" for="cw-work-amount">Earned ($)</label><input id="cw-work-amount" type="number" min="0.01" step="0.01" placeholder="150.00" class="input" required style="margin-top:6px"></div></div><label class="label" for="cw-work-notes" style="display:block;margin-top:12px">Work notes (optional)</label><input id="cw-work-notes" maxlength="500" placeholder="Project or work description" class="input" style="margin:6px 0 14px"><button id="cw-work-btn" class="btn-primary" type="submit" ${clientLedgerError?'disabled':''}>Save daily earnings</button></form></div>
  <div class="card" style="padding:18px;margin-bottom:18px"><h3 class="heading-md" style="margin-bottom:6px">Record client payment</h3><p class="body-sm" style="margin-bottom:14px">Record money actually received. This creates an income transaction in CashFlow.</p><form onsubmit="cwSavePayment(event)"><label class="label" for="cw-pay-person">Client</label><select id="cw-pay-person" class="input" required style="margin:6px 0 12px"><option value="">Choose client</option>${cwOptionList()}</select><div class="grid-2"><div><label class="label" for="cw-pay-date">Payment date</label><input id="cw-pay-date" type="date" value="${dayStr()}" class="input" required style="margin-top:6px"></div><div><label class="label" for="cw-pay-amount">Received ($)</label><input id="cw-pay-amount" type="number" step="0.01" min="0.01" placeholder="500.00" class="input" required style="margin-top:6px"></div></div><label class="label" for="cw-pay-notes" style="display:block;margin-top:12px">Payment notes (optional)</label><input id="cw-pay-notes" maxlength="500" placeholder="Week paid, transfer reference, etc." class="input" style="margin:6px 0 14px"><button id="cw-pay-btn" class="btn-primary" type="submit">Save received payment</button></form></div>
  <div class="section-head"><h3 class="heading-md">Your clients</h3><span class="count-badge">${PEOPLE.length}</span></div>
- ${PEOPLE.length?PEOPLE.map(p=>{const earned=cwTotal(cwEntries(p.id),'amount'),paid=cwTotal(cwPayments(p.id),'amount');return `<div class="card-flat list-item" style="margin-bottom:9px"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.9rem">${esc(p.name)}</div><div class="caption">Earned ${cwMoney(earned)} · Received ${cwMoney(paid)}</div></div><button class="pill" aria-label="View client history" onclick='openPersonHistory(${JSON.stringify(p.id)})'>History ${icon('chevron-right')}</button></div><div style="font-size:.78rem;margin-top:8px;color:${earned-paid>0?'var(--amber)':'var(--green)'}">${earned-paid>=0?'Outstanding':'Overpaid / credit'}: <strong>${cwMoney(Math.abs(earned-paid))}</strong></div></div>`}).join(''):emptyBlock('users','No clients yet','Add a client to begin tracking daily earnings.')}
+ ${PEOPLE.length?PEOPLE.map(p=>{const earned=cwTotal(cwEntries(p.id),'amount'),paid=cwTotal(cwPayments(p.id),'amount');return `<div class="card-flat list-item" style="margin-bottom:9px"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.9rem">${esc(p.name)}</div><div class="caption">Earned ${cwMoney(earned)} · Received ${cwMoney(paid)}</div></div><button class="pill" aria-label="View client history" onclick='openPersonHistory(${JSON.stringify(p.id)})'>History ${icon('chevron-right')}</button><button class="pill" aria-label="Download client statement" onclick='cf21ClientCSV(${JSON.stringify(p.id)})'>${icon('download')} Statement</button></div><div style="font-size:.78rem;margin-top:8px;color:${earned-paid>0?'var(--amber)':'var(--green)'}">${earned-paid>=0?'Outstanding':'Overpaid / credit'}: <strong>${cwMoney(Math.abs(earned-paid))}</strong></div></div>`}).join(''):emptyBlock('users','No clients yet','Add a client to begin tracking daily earnings.')}
  <button class="btn-primary" style="margin:12px 0 22px" onclick="openPersonForm()">${icon('plus')} Add client</button>
  <div class="section-head"><h3 class="heading-md">Work recorded this week</h3><span class="count-badge">${weeklyWork.length}</span></div>
  ${weeklyWork.length?weeklyWork.slice().sort((a,b)=>b.work_date.localeCompare(a.work_date)).map(w=>`<div class="list-item card-flat" style="display:flex;gap:8px;align-items:center"><div style="flex:1"><strong style="font-size:.8rem">${esc(PEOPLE.find(p=>String(p.id)===String(w.person_id))?.name||'Client')}</strong><div class="caption">${cwDate(w.work_date)}${w.notes?' · '+esc(w.notes):''}</div></div><strong class="mono">${cwMoney(w.amount)}</strong><button class="icon-btn" aria-label="Edit work entry" onclick='cwEditWork(${JSON.stringify(w.id)})'>${icon('pencil')}</button><button class="icon-btn" aria-label="Delete work entry" onclick='cwDeleteWork(${JSON.stringify(w.id)})'>${icon('trash-2')}</button></div>`).join(''):`<p class="body-sm" style="margin:8px 0 22px">No work entered for this week.</p>`}
  <div class="section-head" style="margin-top:18px"><h3 class="heading-md">Payments received this week</h3><span class="count-badge">${weeklyPaid.length}</span></div>
- ${weeklyPaid.length?weeklyPaid.map(t=>`<div class="list-item card-flat" style="display:flex;align-items:center;gap:9px"><div style="flex:1"><strong style="font-size:.8rem">${esc(PEOPLE.find(p=>String(p.id)===String(t.personId))?.name||t.description||'Client')}</strong><div class="caption">${cwDate(t.date.slice(0,10))}${t.notes?' · '+esc(t.notes):''}</div></div><strong style="color:var(--green)" class="mono">${cwMoney(t.amount)}</strong></div>`).join(''):`<p class="body-sm" style="margin:8px 0 22px">No payments recorded this week.</p>`}
+ ${weeklyPaid.length?weeklyPaid.map(t=>`<div class="list-item card-flat" style="display:flex;align-items:center;gap:9px"><div style="flex:1"><strong style="font-size:.8rem">${esc(PEOPLE.find(p=>String(p.id)===String(t.personId))?.name||t.description||'Client')}</strong><div class="caption">${cwDate(t.date.slice(0,10))}${t.notes?' · '+esc(t.notes):''}</div></div><strong style="color:var(--green)" class="mono">${cwMoney(t.amount)}</strong><button class="icon-btn" aria-label="Edit received payment" onclick='cf2OpenEdit(${JSON.stringify(t.id)})'>${icon('pencil')}</button></div>`).join(''):`<p class="body-sm" style="margin:8px 0 22px">No payments recorded this week.</p>`}
  `;
 }
 function cwValidAmount(v){return /^\d+(?:\.\d{1,2})?$/.test(v)&&Number(v)>0&&Number.isFinite(Number(v));}
@@ -1531,6 +1548,9 @@ function renderMain() {
   else if (state.tab === "tools") el.innerHTML = renderTools();
   else if (state.tab === "ask") el.innerHTML = renderAsk();
   else if (state.tab === "people") el.innerHTML = renderPeople();
+  if(cf21LoadWarnings.length){
+    el.insertAdjacentHTML('afterbegin',`<div class="card" role="alert" style="padding:14px;border-color:var(--red);margin-bottom:15px"><strong style="color:var(--red)">Some records could not load</strong><p class="body-sm" style="margin:7px 0">${cf21LoadWarnings.map(x=>esc(x)).join('<br>')}</p><p class="caption">Do not assume displayed totals are complete. Check Supabase access or refresh.</p><button class="pill active" onclick="bootApp()" style="margin-top:8px">Retry loading</button></div>`);
+  }
   el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in");
   refreshIcons();
   if (state.tab === "afford") updateAffordCalculator();
@@ -1578,7 +1598,7 @@ function sendChatMsg() {
   if (!q) return;
   CHAT_MSGS.push({ role: "user", html: esc(q) });
   CHAT_MSGS.push({ role: "assistant", html: answerFinanceQuestion(q) });
-  Store.set("chatHistory", CHAT_MSGS);
+  cf21SaveChatHistory();
   input.value = "";
   renderChatMessages();
   buildChatSuggestions();
@@ -1586,7 +1606,7 @@ function sendChatMsg() {
 function askSuggested(q) { document.getElementById("chat-input").value = q; sendChatMsg(); }
 function clearChat() {
   CHAT_MSGS = [{ role:"assistant", html:'<span class="cb-line">Chat cleared. Ask me anything about your finances!</span>' }];
-  Store.set("chatHistory", CHAT_MSGS);
+  cf21SaveChatHistory();
   renderMain();
 }
 function buildChatSuggestions() {
@@ -2244,7 +2264,7 @@ function renderDashboard() {
 
   return `
   ${cf2Header}
-
+  ${cf21ClientOverview()}
   <button class="card card-flat" style="width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;cursor:pointer" onclick="goToTodayDetail()">
     <div>
       <div class="caption">Today</div>
@@ -2862,7 +2882,7 @@ function renderForecast() {
       <div class="forecast-top"><span class="label" style="font-size:9px">${c.l}</span><div class="forecast-icon" style="background:${c.bg}">${icon(c.i,'style="color:'+c.c+'"')}</div></div>
       <div class="forecast-val mono" style="color:${c.c}">${fmt(c.v)}</div>
     </div>`).join("")}
-  </div>`;
+  </div>${cf21ForecastPanel()}`;
 }
 
 function emptyBlock(iconName, title, sub) {
@@ -2873,6 +2893,70 @@ function toggleForm(id) { const el = document.getElementById(id); const isOpen =
 /* ══════════════════════════════════════════════
    RENDER: TOOLS TAB
    ══════════════════════════════════════════════ */
+
+/* CashFlow 2.1: client reports, transparent forecasts and portable backup.
+   Calculations use only records loaded for the currently signed-in user. */
+function cf21SafeCSV(v){
+  let t=String(v==null?'':v);
+  if(/^[\s]*[=+@\-\t\r]/.test(t))t="'"+t; // defend against spreadsheet formula injection
+  return '"'+t.replace(/"/g,'""')+'"';
+}
+function cf21DownloadText(text,name,type){
+  const blob=new Blob([text],{type:type||'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+function cf21ClientCSV(personId){
+  const person=PEOPLE.find(p=>String(p.id)===String(personId));if(!person)return;
+  const work=cwEntries(personId).map(w=>({date:w.work_date,type:'Earned',amount:Number(w.amount),notes:w.notes||''}));
+  const received=cwPayments(personId).map(t=>({date:t.date.slice(0,10),type:'Received',amount:Number(t.amount),notes:t.notes||''}));
+  const rows=[...work,...received].sort((a,b)=>a.date.localeCompare(b.date));
+  const earned=cwTotal(work,'amount'),paid=cwTotal(received,'amount');
+  const report=[['Client','Date','Entry','Amount (USD)','Notes'],...rows.map(r=>[person.name,r.date,r.type,r.amount.toFixed(2),r.notes]),['TOTAL','', 'Earned',earned.toFixed(2),''],['TOTAL','', 'Received',paid.toFixed(2),''],['BALANCE','',earned>=paid?'Outstanding':'Client credit',Math.abs(earned-paid).toFixed(2),'']];
+  const csv='\ufeff'+report.map(cols=>cols.map(cf21SafeCSV).join(',')).join('\r\n');
+  cf21DownloadText(csv,'CashFlow_Client_'+dayStr()+'_'+String(person.name).replace(/[^a-z0-9_-]/gi,'_').slice(0,45)+'.csv');
+}
+function cf21ClientOverview(){
+  if(!PEOPLE.length&&!CLIENT_WORK.length)return '';
+  const earned=cwTotal(CLIENT_WORK,'amount');
+  const paid=cwTotal(TXS.filter(t=>t.type==='income'&&t.category==='people_payment'&&t.personId&&t.currency==='USD'),'amount');
+  const owing=Math.max(0,earned-paid),credit=Math.max(0,paid-earned);
+  return `<section class="cf2-panel" style="margin-bottom:16px">
+    <div class="cf2-section-title">${icon('users')} Client receivables</div>
+    <div class="grid-2"><div class="cf21-metric"><span>Work earned</span><strong>${cwMoney(earned)}</strong></div><div class="cf21-metric"><span>Payments received</span><strong style="color:var(--green)">${cwMoney(paid)}</strong></div><div class="cf21-metric"><span>Net amount owed</span><strong style="color:var(--amber)">${cwMoney(owing)}</strong></div><div class="cf21-metric"><span>Advance / credit</span><strong>${cwMoney(credit)}</strong></div></div>
+    <p class="cf2-note">All-time USD ledger totals; received payments already appear in income. Outstanding work is not cash in your account.</p>
+    <button class="pill active" style="margin-top:10px" onclick="switchTab('people')">Open client ledger ${icon('arrow-right')}</button>
+  </section>`;
+}
+function cf21DownloadBackup(){
+  if(cf21LoadWarnings.length || clientLedgerError){alert('Some records did not load. Resolve the database warnings before creating a complete backup.');return;}
+  const data={format:'cashflow-2.1-loaded-data',createdAt:new Date().toISOString(),accountId:_cachedUserId,
+    transactions:TXS,budgets:BUDGETS,goals:GOALS,bills:BILLS,recurring:RECURRING,
+    friends:FRIENDS,people:PEOPLE,expenseSplits:SPLITS,splitParticipants:PARTICIPANTS,
+    clientWork:CLIENT_WORK};
+  cf21DownloadText(JSON.stringify(data,null,2),'CashFlow_Backup_'+dayStr()+'.json','application/json');
+}
+function cf21Forecast(days){
+  // Simple transparent projection: 90 calendar-day observed USD daily averages.
+  const n=Math.min(90,Math.max(7,Number(days)||30));
+  const today=new Date(dayStr()+'T12:00:00'),start=new Date(today);start.setDate(start.getDate()-89);
+  const from=dayStr(start),to=dayStr(today);
+  const relevant=TXS.filter(t=>t.currency==='USD'&&t.date.slice(0,10)>=from&&t.date.slice(0,10)<=to);
+  const inflow=cwTotal(relevant.filter(t=>t.type==='income'),'amount'),outflow=cwTotal(relevant.filter(t=>t.type==='expense'),'amount');
+  // Divide by window length from earliest included record, not number of recorded days.
+  const earliest=relevant.length?relevant.reduce((v,t)=>t.date.slice(0,10)<v?t.date.slice(0,10):v,to):to;
+  const age=Math.max(1,Math.min(90,Math.floor((today-new Date(earliest+'T12:00:00'))/86400000)+1));
+  return {days:n,samples:relevant.length,observationDays:age,income:inflow/age*n,expense:outflow/age*n,net:(inflow-outflow)/age*n};
+}
+function cf21ForecastPanel(){
+  const periods=[7,30,90];
+  return `<section class="card" style="padding:16px;margin-top:16px"><h3 class="heading-md" style="margin-bottom:6px">7 / 30 / 90-day cash-flow outlook</h3>
+  <p class="body-sm" style="margin-bottom:12px">Illustrative projections using the recent 90-day USD transaction history. These do not guarantee future income and exclude unreceived client work.</p>
+  <div class="cf21-forecast-grid">${periods.map(n=>{const x=cf21Forecast(n);return `<div class="card-flat" style="padding:12px"><div class="caption">Next ${n} days</div><div class="heading-md mono" style="margin:5px 0;color:${x.net>=0?'var(--green)':'var(--red)'}">${fmt(x.net)}</div><div class="caption">Income ${fmt(x.income)}<br>Outgoings ${fmt(x.expense)}</div><div class="caption" style="margin-top:5px">${x.samples} transactions · ${x.observationDays} days observed</div></div>`}).join('')}</div>
+  </section>`;
+}
+
 function renderTools() {
   const presets = [["month","This month"],["lastMonth","Last month"],["last3","Last 3 months"],["custom","Custom"]];
   const types = [["all","Complete report"],["expense","Expenses only"],["income","Income only"]];
@@ -2898,6 +2982,11 @@ function renderTools() {
     <button class="tool-btn card-flat" onclick="exportPDF()"><div class="tool-icon" style="background:#ff5c7212">${icon("file-text",'style="color:#ff5c72"')}</div><div style="flex:1"><div style="font-size:.75rem;font-weight:700">Export PDF</div><div style="font-size:10px;color:var(--text-3)">Formatted report</div></div>${icon("download",'style="width:14px;height:14px;color:var(--text-4)"')}</button>
     <button class="tool-btn card-flat" onclick="exportExcel()"><div class="tool-icon" style="background:#00c89612">${icon("file-spreadsheet",'style="color:#00c896"')}</div><div style="flex:1"><div style="font-size:.75rem;font-weight:700">Export Excel</div><div style="font-size:10px;color:var(--text-3)">Spreadsheet data</div></div>${icon("download",'style="width:14px;height:14px;color:var(--text-4)"')}</button>
     <button class="tool-btn card-flat" onclick="exportCSVFile()"><div class="tool-icon" style="background:#636bff12">${icon("file-down",'style="color:#636bff"')}</div><div style="flex:1"><div style="font-size:.75rem;font-weight:700">Export CSV</div><div style="font-size:10px;color:var(--text-3)">Universal format</div></div>${icon("download",'style="width:14px;height:14px;color:var(--text-4)"')}</button>
+  </div>
+  <div class="card" style="padding:18px;margin-bottom:16px">
+    <h3 class="heading-md" style="margin-bottom:8px">Private data backup</h3>
+    <p class="body-sm" style="margin-bottom:12px">Export a JSON snapshot of currently loaded records, including client work. The file contains sensitive financial data — store it securely. This is a backup download, not an automatic cloud restore.</p>
+    <button class="btn-primary" onclick="cf21DownloadBackup()">${icon('download')} Download JSON backup</button>
   </div>
   <div class="card" style="padding:24px;text-align:center">
     <div style="width:48px;height:48px;border-radius:16px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:var(--blue-soft)">${icon("upload",'style="width:20px;height:20px;color:var(--blue)"')}</div>
@@ -3330,7 +3419,7 @@ function renderAuthScreen() {
   const card = document.getElementById("auth-card");
   const brand = `<div class="brand" style="justify-content:center;margin-bottom:22px">
       <div class="brand-icon">${icon("activity")}</div>
-      <div><div class="brand-name">CashFlow <span style="font-size:9px;color:var(--blue);vertical-align:middle">2.0</span></div><div class="brand-sub">Finance</div></div>
+      <div><div class="brand-name">CashFlow</div></div>
     </div>`;
   const msgs = `<p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
     <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>`;
@@ -3446,7 +3535,10 @@ async function bootApp() {
     <div class="skeleton" style="height:180px;margin-bottom:20px"></div>
     <div class="skeleton" style="height:220px"></div>`;
   try {
+    const sessionUid=await getUserId();
+    if(!sessionUid)throw new Error('Not authenticated');
     await loadAllFromSupabase();
+    CHAT_MSGS=cf21GetChatHistory() || [{role:'assistant',html:'Ask me about your spending, budgets, and bills. Answers are computed locally from your loaded records.'}];
   } catch (err) {
     console.error(err);
     document.getElementById("main-content").innerHTML = `<div class="card empty-state">${icon("cloud-off")}<p class="heading-md" style="margin-bottom:4px">Can't reach the database</p><p class="body-sm">Check your connection and reload.</p></div>`;
@@ -3474,7 +3566,8 @@ async function startApp() {
       authMode = "signin"; renderAuthScreen(); showAuthScreen();
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
-      CLIENT_WORK = []; clientLedgerError = ""; _cachedUserId = null;
+      CLIENT_WORK = []; clientLedgerError = ""; cf21LoadWarnings=[]; _cachedUserId = null;
+      CHAT_MSGS = [{role:'assistant',html:'Welcome to CashFlow. Sign in to view your private chat history.'}];
     }
   });
 }
