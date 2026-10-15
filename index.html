@@ -3906,54 +3906,77 @@ function cfShiftPreview(form){
  el.style.color='var(--text-2)';
 }
 async function dhootSaveShift(e){
- e.preventDefault();if(dhootWorkBusy)return;
- const form=e.currentTarget,v=cfShiftDetails(form),status=form.querySelector('[data-cf-shift-status]'),button=form.querySelector('button[type="submit"]');
- const report=(message,isError=true)=>{if(status){status.textContent=message;status.style.color=isError?'var(--red)':'var(--green)';}else alert(message);};
- if(v.error){report(v.error);return;}
- const duplicates=dhootWork.filter(s=>String(s.work_date)===v.date&&String(s.start_time).slice(0,5)===v.start&&String(s.end_time).slice(0,5)===v.end);
- if(duplicates.length){report('This shift already exists. Use Edit in Shift History instead of submitting it again.');return;}
- const overlaps=dhootWork.some(s=>{try{
-  const a=new Date(String(s.work_date)+'T'+String(s.start_time).slice(0,5)+':00').getTime();
-  if(!Number.isFinite(a))return false;
-  const d=dhootHours(String(s.start_time).slice(0,5),String(s.end_time).slice(0,5),0)*60000;
-  return d>0&&v.startStamp<a+d&&v.endStamp>a;
- }catch{return false;}});
- if(overlaps&&!confirm('This shift overlaps an existing shift. Save it anyway?'))return;
- dhootWorkBusy=true;if(button){button.disabled=true;button.textContent='Saving shift…';}report('Saving your shift…',false);
- let saved=false;
+ e.preventDefault();
+ const form=e.currentTarget;
+ if(dhootWorkBusy){return;}
+ const v=cfShiftDetails(form);
+ const status=form.querySelector('[data-cf-shift-status]');
+ const button=form.querySelector('button[type="submit"]');
+ const report=(message,isError=false)=>{
+  if(status){status.textContent=message;status.style.color=isError?'var(--red)':'var(--green)';}
+  else alert(message);
+ };
+ if(v.error){report(v.error,true);return;}
+ if(!navigator.onLine){report('You appear to be offline. Reconnect before saving. The shift has not been submitted.',true);return;}
+ const duplicates=dhootWork.some(s=>String(s.work_date)===v.date&&String(s.start_time).slice(0,5)===v.start&&String(s.end_time).slice(0,5)===v.end);
+ if(duplicates){report('This shift is already saved. Use Edit in Shift History to change it.',true);return;}
+ const overlaps=dhootWork.some(s=>{
+  const start=new Date(String(s.work_date)+'T'+String(s.start_time).slice(0,5)+':00').getTime();
+  const duration=dhootHours(String(s.start_time).slice(0,5),String(s.end_time).slice(0,5),0)*60000;
+  return Number.isFinite(start)&&duration>0&&v.startStamp<start+duration&&v.endStamp>start;
+ });
+ if(overlaps&&!confirm('This shift overlaps an existing shift. Save anyway?'))return;
+ dhootWorkBusy=true;
+ if(button){button.disabled=true;button.textContent='Saving to Supabase…';}
+ report('Saving shift to Supabase…');
  try{
+  // Do not combine INSERT with .select().single(): a read policy or a
+  // missing return row must not make a successful INSERT look like a failure.
   const userId=await getUserId();
-  if(!userId)throw new Error('Please sign in again before saving your shift.');
+  if(!userId)throw new Error('Your session expired. Sign out and sign back in, then submit again.');
   const payload={user_id:userId,work_date:v.date,start_time:v.start,end_time:v.end,break_minutes:v.breaks,paid_hours:v.hours};
-  // The inserted row is returned by Supabase. Do not depend on a second SELECT
-  // (which can be stale or fail) before reflecting a confirmed save in the UI.
-  const {data,error}=await sb.from('dhoot_work_shifts').insert(payload).select('*').single();
-  if(error)throw error;
-  saved=true;
-  const inserted=data||payload;
-  if(!dhootWork.some(row=>String(row.id)===String(inserted.id)&&inserted.id!=null))dhootWork=[inserted,...dhootWork];
-  // Clear the PC1/PC2 filter and move to the saved month before rendering.
+  const {error:saveError}=await sb.from('dhoot_work_shifts').insert(payload);
+  if(saveError)throw saveError;
+  // INSERT succeeded. Immediately fetch persisted rows for authoritative IDs.
+  // If loading fails, keep the saved state visible and do not re-insert.
+  let synced=false;
+  try{
+   const {data,error:fetchError}=await sb.from('dhoot_work_shifts').select('*').order('work_date',{ascending:false});
+   if(fetchError)throw fetchError;
+   if(!Array.isArray(data))throw Error('No shift list returned');
+   dhootWork=data;
+   synced=true;
+  }catch(loadError){
+   console.warn('Shift inserted successfully but read-back failed:',loadError);
+   // Avoid fabricating a database ID. The record is saved but must be
+   // reloaded when read permissions or connectivity are restored.
+  }
   if(typeof d40RevealSavedShift==='function')d40RevealSavedShift(v.date.slice(0,7));
   else renderMain();
+  const msg=synced
+    ?`Shift saved to Supabase: ${v.date} · ${v.hours.toFixed(2)} hours · ${dhootMoney(v.hours*dhootRateAt(v.date))}.`
+    :'Shift saved to Supabase, but the list could not be refreshed. Use Reload Shifts; do not submit the same shift twice.';
   const notice=document.getElementById('cf-shift-save-notice');
-  if(notice){notice.textContent=`Shift saved successfully: ${v.date} · ${v.hours.toFixed(2)} h · ${dhootMoney(v.hours*dhootRateAt(v.date))}.`;notice.hidden=false;}
-  // Refetch after the immediate UI update to reconcile with server state.
-  // If the refetch fails, keep the server-confirmed inserted row visible.
-  try{
-   const {data:fresh,error:reloadError}=await sb.from('dhoot_work_shifts').select('*').order('work_date',{ascending:false});
-   if(reloadError)throw reloadError;
-   if(Array.isArray(fresh))dhootWork=fresh;
-   renderMain();
-   const updated=document.getElementById('cf-shift-save-notice');
-   if(updated){updated.textContent=`Shift saved successfully: ${v.date} · ${v.hours.toFixed(2)} h · ${dhootMoney(v.hours*dhootRateAt(v.date))}.`;updated.hidden=false;}
-  }catch(refreshError){
-   console.warn('Shift saved, but background refresh failed:',refreshError);
-   const note=document.getElementById('cf-shift-save-notice');
-   if(note){note.textContent='Shift saved successfully. Live refresh is temporarily unavailable.';note.hidden=false;}
-  }
- }catch(err){report('Could not save shift: '+(err?.message||'Unknown error')+' — check your connection and Supabase permissions.');}
- finally{dhootWorkBusy=false;if(button&&button.isConnected){button.disabled=false;button.textContent='Submit Shift';}}
+  if(notice){notice.textContent=msg;notice.hidden=false;notice.style.color=synced?'var(--green)':'var(--amber)';}
+  else alert(msg);
+ }catch(err){
+  const errorText=err?.message||'Unknown Supabase error';
+  report('Shift not confirmed saved: '+errorText+'. Check your connection, sign-in and shift table INSERT policy.',true);
+  console.error('CashFlow shift save failed:',err);
+ }finally{
+  dhootWorkBusy=false;
+  if(button&&button.isConnected){button.disabled=false;button.textContent='Submit Shift';}
+ }
 }
+async function cfReloadShifts(){
+ if(dhootWorkBusy)return;
+ try{
+  const {data,error}=await sb.from('dhoot_work_shifts').select('*').order('work_date',{ascending:false});
+  if(error)throw error;
+  dhootWork=data||[];renderMain();
+ }catch(err){alert('Unable to reload saved shifts: '+(err?.message||'Unknown error'));}
+}
+
 async function dhootSaveRate(e){e.preventDefault();if(dhootWorkBusy)return;const f=new FormData(e.target),rate=Number(f.get('rate')),date=String(f.get('date'));if(!Number.isFinite(rate)||rate<0||rate>10000) return alert('Enter a valid rate.');dhootWorkBusy=true;try{const {error}=await sb.from('dhoot_work_rates').insert({user_id:await getUserId(),effective_date:date,hourly_rate:rate});if(error)throw error;await dhootLoadWork();renderMain()}catch(err){alert('Could not save rate: '+err.message)}finally{dhootWorkBusy=false}}
 async function dhootClockAction(action){if(dhootWorkBusy)return;dhootWorkBusy=true;try{const {data,error}=await sb.rpc('dhoot_clock_action',{p_action:action});if(error)throw error;await dhootLoadWork();renderMain();}catch(err){alert('Clock action failed: '+err.message+' — refresh before retrying to avoid duplicate actions.')}finally{dhootWorkBusy=false}}
 async function dhootDeleteShift(id){if(!confirm('Delete this shift record?'))return;const {error}=await sb.from('dhoot_work_shifts').delete().eq('id',id);if(error)return alert(error.message);await dhootLoadWork();renderMain()}
@@ -4232,7 +4255,7 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  <div class="d40-period-break"><div class="d40-pay orange" style="display:block"><small>🔥 Paycheck 1</small><strong style="display:block;margin-top:5px">${mny(p1.gross)}</strong><small>${earned?(p1.gross/earned*100).toFixed(1):'0.0'}% · ${p1.hours.toFixed(2)} h</small></div><div class="d40-pay teal" style="display:block"><small>💧 Paycheck 2</small><strong style="display:block;margin-top:5px">${mny(p2.gross)}</strong><small>${earned?(p2.gross/earned*100).toFixed(1):'0.0'}% · ${p2.hours.toFixed(2)} h</small></div></div>
  <div class="d40-month-list"><h2 style="font-size:13px;margin-bottom:8px">📅 PAST PAYCHECKS</h2>${allMonths.length?allMonths.map(m=>{const a=period(m,1),b=period(m,2);return `<button class="d40-month-row" style="width:100%;text-align:left" onclick="d40SetMonth('${m}')"><span><b>${safe(monthsLabel(m))}</b><br><small>PC1 ${mny(a.gross)} · PC2 ${mny(b.gross)}</small></span><strong>${mny(a.gross+b.gross)}</strong></button>`}).join(''):'<p class="d40-muted">Previous months appear after shifts are saved.</p>'}</div></section>
  <section class="d40-card"><div class="d40-head"><h2>New Session Log</h2><span class="d40-tiny">Straight-time only</span></div><form class="d40-form" onsubmit="dhootSaveShift(event)" oninput="cfShiftPreview(this)" onchange="cfShiftPreview(this)"><label>Shift date<input class="input" type="date" name="date" value="${safe(workMonth===monthStr(new Date())?dhootToday():workMonth+'-01')}" required></label><div class="d40-period-break"><label>Start time<input class="input" type="time" name="start" value="18:00" required></label><label>End time<input class="input" type="time" name="end" value="23:00" required></label></div><label>Unpaid break (minutes)<input class="input" type="number" name="break" min="0" max="1439" value="0" required></label><p class="d40-muted" data-cf-shift-preview aria-live="polite">Check your date and times before submitting. Overnight end times are supported.</p><p class="d40-muted" data-cf-shift-status role="status" aria-live="polite"></p><button type="submit" class="d40-submit" ${dhootWorkError||dhootWorkBusy?'disabled':''}>Submit Shift</button></form><p class="d40-muted" style="margin-top:9px">Saved shifts appear immediately below without refreshing. Use Edit to adjust paid hours.</p><p id="cf-shift-save-notice" class="d40-muted" hidden role="status"></p></section>
- <section class="d40-card"><div class="d40-head"><h2>SHIFTS (${entries.length})</h2><span class="d40-tiny">${safe(monthsLabel(workMonth))}${filterHalf?' · PC'+filterHalf:''}</span></div>${entries.length?entries.map(s=>{const b=breakdown.get(s.id)||{h:0,gross:0};return `<div class="d40-history-row"><div><strong>${safe(s.work_date)}</strong> <span class="d40-tiny" style="color:${Number(s.work_date.slice(8))<=15?'#ff8035':'#19bdc6'}">● PC${Number(s.work_date.slice(8))<=15?1:2}</span><p>${safe(String(s.start_time).slice(0,5))} – ${safe(String(s.end_time).slice(0,5))} (${Number(b.h).toFixed(2)} h)</p><strong>${mny(b.gross)}</strong></div><div class="d40-history-controls"><button type="button" onclick="d35EditShift('${safe(s.id)}')">Edit</button><button type="button" onclick="dhootDeleteShift('${safe(s.id)}')" aria-label="Delete shift">×</button></div></div>`}).join(''):'<p class="d40-muted">No shifts for the selected period.</p>'}</section>
+ <section class="d40-card"><div class="d40-head"><h2>SHIFTS (${entries.length})</h2><button type="button" class="dhoot-btn" onclick="cfReloadShifts()" style="width:auto">Reload Shifts</button><span class="d40-tiny">${safe(monthsLabel(workMonth))}${filterHalf?' · PC'+filterHalf:''}</span></div>${entries.length?entries.map(s=>{const b=breakdown.get(s.id)||{h:0,gross:0};return `<div class="d40-history-row"><div><strong>${safe(s.work_date)}</strong> <span class="d40-tiny" style="color:${Number(s.work_date.slice(8))<=15?'#ff8035':'#19bdc6'}">● PC${Number(s.work_date.slice(8))<=15?1:2}</span><p>${safe(String(s.start_time).slice(0,5))} – ${safe(String(s.end_time).slice(0,5))} (${Number(b.h).toFixed(2)} h)</p><strong>${mny(b.gross)}</strong></div><div class="d40-history-controls"><button type="button" onclick="d35EditShift('${safe(s.id)}')">Edit</button><button type="button" onclick="dhootDeleteShift('${safe(s.id)}')" aria-label="Delete shift">×</button></div></div>`}).join(''):'<p class="d40-muted">No shifts for the selected period.</p>'}</section>
  <details class="d40-card"><summary style="cursor:pointer;font-weight:800">Time clock & hourly rate settings</summary><div style="margin-top:15px"><p class="d40-muted">${active?(onBreak?'On break':'Shift in progress'):'Not clocked in'}</p><div class="d40-actions" style="margin-top:10px"><button class="dhoot-btn primary" onclick="dhootClockAction('in')" ${active||dhootWorkError?'disabled':''}>Clock in</button><button class="dhoot-btn" onclick="dhootClockAction('out')" ${!working||dhootWorkError?'disabled':''}>Clock out</button><button class="dhoot-btn" onclick="dhootClockAction('break_start')" ${!working||dhootWorkError?'disabled':''}>Start break</button><button class="dhoot-btn" onclick="dhootClockAction('break_end')" ${!onBreak||dhootWorkError?'disabled':''}>End break</button></div><h3 style="margin-top:16px">Hourly rate: ${mny(dhootRateAt(dhootToday()))}/hr</h3><p class="d40-muted" style="margin:7px 0 12px">${dhootRates.length?'The first saved rate also prices earlier shifts. Future rate changes use their effective date.':'No hourly rate saved yet. Save one below to calculate your existing work earnings.'}</p><form class="d40-form" onsubmit="dhootSaveRate(event)"><label>Hourly rate ($)<input class="input" type="number" name="rate" min="0" max="10000" step="0.01" required></label><label>Effective date<input class="input" type="date" name="date" value="${safe(dhootToday())}" required></label><button class="d40-submit" ${dhootWorkError?'disabled':''}>Save rate</button></form></div></details>
  </div>`;
  };
