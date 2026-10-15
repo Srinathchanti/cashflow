@@ -415,7 +415,6 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
     <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
     <button class="pill nav-btn" data-tab="work" onclick="switchTab('work')"><svg data-lucide="clock-3"></svg><span>Work</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
-    <button class="pill nav-btn" data-tab="manage" onclick="switchTab('manage')"><svg data-lucide="target"></svg><span>Manage</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
     <button class="pill nav-btn" data-tab="ask" onclick="switchTab('ask')"><svg data-lucide="message-circle"></svg><span>Ask</span></button>
     <button class="pill nav-btn" data-tab="people" onclick="switchTab('people')"><svg data-lucide="user-check"></svg><span>People</span></button>
@@ -1584,6 +1583,7 @@ function refreshIcons() { if (window.lucide) lucide.createIcons(); }
    RENDER: SHELL
    ══════════════════════════════════════════════ */
 function switchTab(tab) {
+  if (tab === "manage") tab = "story";
   state.tab = tab;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   const bar = document.getElementById("chat-bar");
@@ -1597,7 +1597,6 @@ function renderMain() {
   if (state.tab === "work") el.innerHTML = dhootWorkView();
    else if (state.tab === "story") el.innerHTML = renderDashboard();
   else if (state.tab === "calendar") el.innerHTML = renderCalendar();
-  else if (state.tab === "manage") el.innerHTML = renderManage();
   else if (state.tab === "tools") el.innerHTML = renderTools();
   else if (state.tab === "ask") el.innerHTML = renderAsk();
   else if (state.tab === "people") el.innerHTML = renderPeople();
