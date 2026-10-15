@@ -3941,34 +3941,82 @@ async function dhootCopySQL(){const el=document.getElementById('dhoot-sql-view')
 .d35-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.d35-select{padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-1)}.d35-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--border);padding:12px 0}.d35-row small{display:block;color:var(--text-3);font-size:11px}.d35-btn{border-radius:12px;padding:10px 14px;background:var(--grad-1);color:#fff;font-weight:700}.d35-btn:disabled{opacity:.45}.d35-muted{font-size:12px;color:var(--text-2);line-height:1.65}.d35-alert{padding:12px;border-radius:12px;background:var(--amber-soft);font-size:12px;line-height:1.5;margin:12px 0}
 @media(max-width:550px){.d35-grid{grid-template-columns:1fr 1fr}.d35-card{padding:15px}}
 </style>
-<template id="dhoot-v35-sql">-- Dhoot v35 additive upgrade: linked paycheck receipts and shift editing permissions.
--- Run once in the SAME Supabase project, after the complete v29 setup.
--- Does not replace or delete existing tables or payroll records.
+<template id="dhoot-v35-sql">-- Dhoot v35 corrected upgrade (compatible with BIGINT or UUID transactions.id)
+-- Preserves existing transactions, work shifts and financial records.
+-- Run AFTER the Dhoot work tables have been installed.
 BEGIN;
-CREATE TABLE IF NOT EXISTS public.dhoot_pay_receipts (
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
- transaction_id uuid NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
- pay_month text NOT NULL CHECK(pay_month ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'),
- pay_half integer NOT NULL CHECK(pay_half IN (1,2)),
- amount numeric(14,2) NOT NULL CHECK(amount > 0),
- created_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(transaction_id)
-);
-CREATE INDEX IF NOT EXISTS dhoot_receipts_user_period ON public.dhoot_pay_receipts(user_id,pay_month,pay_half);
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DO $dhoot$
+DECLARE
+  id_type text;
+  receipt_type text;
+BEGIN
+  SELECT format_type(a.atttypid, a.atttypmod) INTO id_type
+  FROM pg_attribute a
+  WHERE a.attrelid = to_regclass('public.transactions')
+    AND a.attname = 'id' AND a.attnum &gt; 0 AND NOT a.attisdropped;
+  IF id_type IS NULL THEN
+    RAISE EXCEPTION 'public.transactions(id) is missing. Install the existing Dhoot finance schema first.';
+  END IF;
+  IF id_type NOT IN ('bigint','uuid','integer') THEN
+    RAISE EXCEPTION 'Unsupported transactions.id type: %', id_type;
+  END IF;
+
+  -- Avoid rewriting or deleting a previously created receipts table.
+  IF to_regclass('public.dhoot_pay_receipts') IS NOT NULL THEN
+    SELECT format_type(a.atttypid, a.atttypmod) INTO receipt_type
+    FROM pg_attribute a
+    WHERE a.attrelid = 'public.dhoot_pay_receipts'::regclass
+      AND a.attname = 'transaction_id' AND a.attnum &gt; 0 AND NOT a.attisdropped;
+    IF receipt_type IS DISTINCT FROM id_type THEN
+      RAISE EXCEPTION 'Existing receipts.transaction_id is %, but transactions.id is %. Manual migration required to preserve linked payments.', receipt_type, id_type;
+    END IF;
+  ELSE
+    EXECUTE format($create$
+      CREATE TABLE public.dhoot_pay_receipts (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+        transaction_id %s NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
+        pay_month text NOT NULL CHECK(pay_month ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$'),
+        pay_half integer NOT NULL CHECK(pay_half IN (1,2)),
+        amount numeric(14,2) NOT NULL CHECK(amount &gt; 0),
+        created_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE(transaction_id)
+      )
+    $create$, id_type);
+  END IF;
+END
+$dhoot$;
+CREATE INDEX IF NOT EXISTS dhoot_receipts_user_period
+  ON public.dhoot_pay_receipts(user_id,pay_month,pay_half);
 ALTER TABLE public.dhoot_pay_receipts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS dhoot_pay_receipts_select ON public.dhoot_pay_receipts;
-CREATE POLICY dhoot_pay_receipts_select ON public.dhoot_pay_receipts FOR SELECT TO authenticated USING(user_id=(SELECT auth.uid()));
+CREATE POLICY dhoot_pay_receipts_select ON public.dhoot_pay_receipts
+  FOR SELECT TO authenticated USING(user_id=(SELECT auth.uid()));
 DROP POLICY IF EXISTS dhoot_pay_receipts_insert ON public.dhoot_pay_receipts;
-CREATE POLICY dhoot_pay_receipts_insert ON public.dhoot_pay_receipts FOR INSERT TO authenticated WITH CHECK(
- user_id=(SELECT auth.uid()) AND EXISTS(SELECT 1 FROM public.transactions t WHERE t.id=transaction_id AND t.user_id=(SELECT auth.uid()) AND t.type='income' AND t.currency='USD' AND t.amount >= amount)
-);
+CREATE POLICY dhoot_pay_receipts_insert ON public.dhoot_pay_receipts
+  FOR INSERT TO authenticated WITH CHECK (
+    user_id=(SELECT auth.uid()) AND EXISTS (
+      SELECT 1 FROM public.transactions t
+      WHERE t.id=transaction_id AND t.user_id=(SELECT auth.uid())
+        AND t.type='income' AND t.currency='USD' AND t.amount &gt;= amount
+    )
+  );
 DROP POLICY IF EXISTS dhoot_pay_receipts_delete ON public.dhoot_pay_receipts;
-CREATE POLICY dhoot_pay_receipts_delete ON public.dhoot_pay_receipts FOR DELETE TO authenticated USING(user_id=(SELECT auth.uid()));
-DROP POLICY IF EXISTS dhoot_work_shifts_update_self ON public.dhoot_work_shifts;
-CREATE POLICY dhoot_work_shifts_update_self ON public.dhoot_work_shifts FOR UPDATE TO authenticated USING(user_id=(SELECT auth.uid())) WITH CHECK(user_id=(SELECT auth.uid()));
+CREATE POLICY dhoot_pay_receipts_delete ON public.dhoot_pay_receipts
+  FOR DELETE TO authenticated USING(user_id=(SELECT auth.uid()));
+-- Shift permission is applied only when the work table exists.
+DO $dhoot$
+BEGIN
+  IF to_regclass('public.dhoot_work_shifts') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS dhoot_work_shifts_update_self ON public.dhoot_work_shifts';
+    EXECUTE 'CREATE POLICY dhoot_work_shifts_update_self ON public.dhoot_work_shifts FOR UPDATE TO authenticated USING(user_id=(SELECT auth.uid())) WITH CHECK(user_id=(SELECT auth.uid()))';
+    EXECUTE 'GRANT UPDATE(work_date,start_time,end_time,break_minutes,paid_hours) ON public.dhoot_work_shifts TO authenticated';
+  END IF;
+END
+$dhoot$;
+REVOKE ALL ON public.dhoot_pay_receipts FROM anon;
 GRANT SELECT,INSERT,DELETE ON public.dhoot_pay_receipts TO authenticated;
-GRANT UPDATE(work_date,start_time,end_time,break_minutes,paid_hours) ON public.dhoot_work_shifts TO authenticated;
 COMMIT;
 NOTIFY pgrst,'reload schema';
 </template>
