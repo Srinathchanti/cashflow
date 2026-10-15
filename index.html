@@ -374,6 +374,9 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
 .d40-history-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px 0;border-top:1px solid var(--border)}.d40-history-row:first-child{border-top:0}.d40-history-row strong{font-size:14px}.d40-history-row p{font-size:11px;color:var(--text-3);margin:4px 0}.d40-history-controls{display:flex;gap:5px}.d40-history-controls button{font-size:11px;padding:7px 9px;border-radius:8px;background:var(--surface-2);color:var(--text-2)}.d40-history-controls button:last-child{color:var(--red)}.d40-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.d40-muted{font-size:11px;color:var(--text-3);line-height:1.5}.d40-goal-editor{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.d40-goal-editor.open{display:grid}.d40-goal-editor label{font-size:11px}.d40-goal-editor button{grid-column:1/-1}
 @media(max-width:410px){.d40-card{padding:14px}.d40-period-tabs{gap:7px}.d40-tab{font-size:11px}.d40-kpi{padding:11px}.d40-pay strong{font-size:17px}}
 </style>
+<style id="dhoot-v43-smart-paychecks-css">
+.d43-forecast-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.d43-forecast-card{border:1px solid var(--border);background:var(--surface-2);border-radius:16px;padding:16px;min-width:0}.d43-card-head{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap}.d43-card-head strong{font-size:14px}.d43-card-head span{font-size:11px;color:var(--text-2)}.d43-forecast-numbers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.d43-forecast-numbers small,.d43-total small{display:block;font-size:11px;color:var(--text-3);margin-bottom:5px}.d43-forecast-numbers strong{font-size:clamp(15px,2vw,23px);overflow-wrap:anywhere}.d43-progress{height:8px;border-radius:10px;background:var(--surface-0);overflow:hidden}.d43-progress>div{height:100%;border-radius:10px}.d43-forecast-card p{font-size:12px;line-height:1.5;margin:10px 0;color:var(--text-2)}.d43-forecast-card>small{font-size:10px;color:var(--text-3);line-height:1.5;display:block}.d43-total{display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid var(--border);padding-top:16px;margin-top:17px}.d43-total strong{font-size:21px;overflow-wrap:anywhere}@media(max-width:550px){.d43-forecast-grid{grid-template-columns:1fr}}@media(max-width:340px){.d43-total{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 
@@ -4095,16 +4098,36 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  const mny=n=>fmt(Number(n)||0,'USD');
  const safe=v=>esc(String(v??''));
  const monthsLabel=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
- function goalKey(){return 'dhoot-work-goals-v40-'+(typeof USER!=='undefined'&&USER?.id?USER.id:'local');}
- function goals(){try{const g=JSON.parse(localStorage.getItem(goalKey())||'{}');return [Math.max(1,Number(g.pc1)||1800),Math.max(1,Number(g.pc2)||1800)];}catch{return [1800,1800];}}
+ function goalKey(){return 'dhoot-smart-paycheck-goals-v43-'+(typeof USER!=='undefined'&&USER?.id?USER.id:'local');}
+ function legacyGoalKey(){return 'dhoot-work-goals-v40-'+(typeof USER!=='undefined'&&USER?.id?USER.id:'local');}
+ function goals(month){try{const store=JSON.parse(localStorage.getItem(goalKey())||'{}');const legacy=JSON.parse(localStorage.getItem(legacyGoalKey())||'{}');const g=store[month]||legacy;return [Number(g.pc1)>0?Number(g.pc1):1800,Number(g.pc2)>0?Number(g.pc2):1800];}catch{return [1800,1800];}}
+ function d43Forecast(month,half,actual){
+   const today=dhootToday();const nowMonth=today.slice(0,7);const lastDay=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();
+   const start=half===1?1:16,end=half===1?15:lastDay;
+   const calendarDays=end-start+1;
+   if(month<nowMonth)return {amount:actual.gross,remaining:0,status:'Completed month',basis:'Actual recorded shifts only'};
+   if(month>nowMonth)return {amount:0,remaining:calendarDays,status:'Future month',basis:'No shifts forecast before a month begins'};
+   const day=Number(today.slice(8,10)),elapsed=Math.max(0,Math.min(end,day)-start+1),remaining=Math.max(0,end-Math.max(day,start-1));
+   if(elapsed===0)return {amount:actual.gross,remaining,status:'Not started',basis:'No observed work in this period'};
+   const cutoff=today;
+   const past=dhootWork.filter(s=>String(s.work_date).slice(0,7)===month&&Number(String(s.work_date).slice(8,10))>=start&&Number(String(s.work_date).slice(8,10))<=Math.min(end,day)&&String(s.work_date)<=cutoff);
+   const bd=dhootBreakdown();const observed=past.reduce((sum,s)=>sum+Number(bd.get(s.id)?.gross||0),0);
+   const projected=observed/elapsed*calendarDays;
+   const value=Math.max(actual.gross,projected);
+   return {amount:value,remaining,status:remaining?'In progress':'Period complete',basis:'Run-rate from elapsed calendar days; includes recorded shifts only'};
+ }
+ function d43ForecastCard(half,actual,target,forecast){
+   const gap=Math.max(0,target-actual.gross),projectionGap=Math.max(0,target-forecast.amount);
+   return `<article class="d43-forecast-card"><div class="d43-card-head"><strong>PC${half} · ${half===1?'1–15':'16–end'}</strong><span>${safe(forecast.status)}</span></div><div class="d43-forecast-numbers"><div><small>Earned so far</small><strong>${mny(actual.gross)}</strong></div><div><small>Projected earnings</small><strong>${mny(forecast.amount)}</strong></div></div><div class="d43-progress"><div style="width:${Math.min(100,forecast.amount/target*100).toFixed(2)}%;background:${half===1?'#ff8035':'#19bdc6'}"></div></div><p>Goal: ${mny(target)} · ${gap?`${mny(gap)} left to earn`:'Goal achieved'} · ${projectionGap?`${mny(projectionGap)} below target at projected pace`:'Projected goal met'}</p><small>${forecast.remaining} day(s) remaining · ${safe(forecast.basis)}. Projections are estimates, not guaranteed wages.</small></article>`;
+ }
  function goalBar(title,amount,target,color,sub){const percent=Math.min(100,Math.max(0,target>0?amount/target*100:0));return `<div class="d40-goal"><div class="d40-goal-top"><span>${title}</span><span style="color:${color}">${mny(amount)} <span style="color:var(--text-3)">/ ${mny(target)}</span></span></div><p>${sub}</p><div class="d40-meter"><div class="d40-fill" style="width:${percent.toFixed(2)}%;background:${color}"></div></div><p style="text-align:right">${(target>0?amount/target*100:0).toFixed(1)}%</p></div>`;}
  window.d40SetMonth=value=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(value)){workMonth=value;renderMain();}};
  window.d40Half=h=>{filterHalf=filterHalf===h?0:h;renderMain();};
  window.d40ToggleGoals=()=>document.getElementById('d40-goal-editor')?.classList.toggle('open');
- window.d40SaveGoals=event=>{event.preventDefault();const f=event.target;const a=Number(f.pc1.value),b=Number(f.pc2.value);if(!Number.isFinite(a)||!Number.isFinite(b)||a<=0||b<=0)return alert('Enter goals greater than zero.');localStorage.setItem(goalKey(),JSON.stringify({pc1:a,pc2:b}));renderMain();};
+ window.d40SaveGoals=event=>{event.preventDefault();const f=event.target;const a=Number(f.pc1.value),b=Number(f.pc2.value);if(!Number.isFinite(a)||!Number.isFinite(b)||a<=0||b<=0)return alert('Enter goals greater than zero.');try{const all=JSON.parse(localStorage.getItem(goalKey())||'{}');all[workMonth]={pc1:a,pc2:b};localStorage.setItem(goalKey(),JSON.stringify(all));renderMain();}catch(err){alert('Could not save goals in this browser: '+err.message);}};
  function period(month,h){return dhootPeriodTotals(month,h);}
  dhootWorkView=function(){
- const p1=period(workMonth,1),p2=period(workMonth,2),earned=p1.gross+p2.gross,hours=p1.hours+p2.hours,[goal1,goal2]=goals(),totalGoal=goal1+goal2;
+ const p1=period(workMonth,1),p2=period(workMonth,2),earned=p1.gross+p2.gross,hours=p1.hours+p2.hours,[goal1,goal2]=goals(workMonth),totalGoal=goal1+goal2,forecast1=d43Forecast(workMonth,1,p1),forecast2=d43Forecast(workMonth,2,p2);
  const allMonths=[...new Set(dhootWork.map(s=>String(s.work_date).slice(0,7)))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse().slice(0,8);
  const share=earned>0?(p1.gross/earned*100):50;
  const entries=dhootWork.filter(s=>String(s.work_date).slice(0,7)===workMonth&&(!filterHalf||(filterHalf===1?Number(s.work_date.slice(8,10))<=15:Number(s.work_date.slice(8,10))>=16))).sort((a,b)=>String(b.work_date).localeCompare(String(a.work_date)));
@@ -4120,6 +4143,9 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  ${goalBar('💧 Paycheck 2 Goal',p2.gross,goal2,'#19bdc6','16th – end of month')}
  ${goalBar('🎯 Monthly Total Goal',earned,totalGoal,'#818cf8','Both paychecks combined')}
  <p class="d40-muted">Goals are saved in this browser. Amounts are earnings estimates before deductions.</p></section>
+ <section class="d40-card d43-smart-paychecks"><div class="d40-head"><div><h2>Smart Paychecks · Forecast</h2><p class="d40-tiny">Estimated PC1/PC2 gross pay and goal outcomes for ${safe(monthsLabel(workMonth))}</p></div></div>
+ <div class="d43-forecast-grid">${d43ForecastCard(1,p1,goal1,forecast1)}${d43ForecastCard(2,p2,goal2,forecast2)}</div>
+ <div class="d43-total"><div><small>Combined projected earnings</small><strong>${mny(forecast1.amount+forecast2.amount)}</strong></div><div><small>Combined target</small><strong>${mny(totalGoal)}</strong></div></div><p class="d40-muted" style="margin-top:12px">Forecast uses current-month recorded shift earnings divided by elapsed calendar days, extended to the end of each pay period. Future periods have no assumed shifts. Straight-time only; excludes overtime premiums, taxes and deductions.</p></section>
  <section class="d40-card"><div class="d40-head"><div><h2>💸 PAYCHECK BREAKDOWN</h2><p class="d40-tiny">Semi-monthly: 1st–15th & 16th–end</p></div><input class="input" type="month" aria-label="Breakdown month" value="${safe(workMonth)}" onchange="d40SetMonth(this.value)" style="max-width:165px"></div>
  <div class="d40-donut" style="--d40-pct:${share.toFixed(3)}%"><div class="d40-donut-label"><small>TOTAL</small><strong>${mny(earned)}</strong></div></div>
  <div class="d40-period-break"><div class="d40-pay orange" style="display:block"><small>🔥 Paycheck 1</small><strong style="display:block;margin-top:5px">${mny(p1.gross)}</strong><small>${earned?(p1.gross/earned*100).toFixed(1):'0.0'}% · ${p1.hours.toFixed(2)} h</small></div><div class="d40-pay teal" style="display:block"><small>💧 Paycheck 2</small><strong style="display:block;margin-top:5px">${mny(p2.gross)}</strong><small>${earned?(p2.gross/earned*100).toFixed(1):'0.0'}% · ${p2.hours.toFixed(2)} h</small></div></div>
