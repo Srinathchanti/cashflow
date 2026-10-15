@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Dhoot — Unified Finance & Work</title><meta name="description" content="Dhoot unifies work shifts, earnings, budgets, expenses, client payments, and financial insights in one workspace.">
+<title>CashFlow — Unified Finance & Work</title><meta name="description" content="CashFlow unifies work shifts, earnings, budgets, expenses, client payments, and financial insights in one workspace.">
 <style>
 @font-face { font-family: "SF"; src: local("Inter"), local("-apple-system"), local("BlinkMacSystemFont"); }
 :root {
@@ -274,7 +274,7 @@ textarea.input { min-height:60px; resize:none; }
 .home-person-row { display:flex; align-items:center; gap:12px; }
 .home-person-avatar { width:38px; height:38px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:.8125rem; font-weight:700; color:#0b0d16; flex-shrink:0; }
 
-/* Dhoot 2.0 — refreshed overview and purchase planner */
+/* CashFlow 2.0 — refreshed overview and purchase planner */
 .cf2-hero{border:1px solid rgba(255,255,255,.15);border-radius:34px;padding:28px;background:linear-gradient(120deg,#5b58eb 0%,#7467e6 45%,#9c70d0 100%);color:#fff;box-shadow:0 22px 46px rgba(87,83,204,.24);margin-bottom:16px;position:relative;overflow:hidden}
 .cf2-hero:after{content:"";position:absolute;width:260px;height:260px;right:-48px;top:-88px;border-radius:100%;background:rgba(255,255,255,.12);pointer-events:none}
 .cf2-kicker{font-size:14px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;opacity:.9}
@@ -298,7 +298,7 @@ textarea.input { min-height:60px; resize:none; }
 @media(max-width:370px){.cf2-actions{gap:5px}.cf2-action{font-size:10px}.nav-inner{gap:1px;padding:5px}.nav-btn{padding:8px 9px}}
 @media(prefers-reduced-motion:reduce){.cf2-action{transition:none}}
 
-/* Dhoot Phase 2 refinements */
+/* CashFlow Phase 2 refinements */
 .cf2-icon-action{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);flex-shrink:0}
 .cf2-icon-action:hover,.cf2-icon-action:focus-visible{color:var(--blue);outline:2px solid var(--border-focus)}
 .cf2-icon-action svg{width:15px;height:15px}
@@ -312,7 +312,7 @@ textarea.input { min-height:60px; resize:none; }
 @media(max-width:420px){.cf2-edit-grid{grid-template-columns:1fr}.cf2-hero{padding:20px}.cf2-total{font-size:1.8rem}.cf2-actions{gap:8px}}
 @media(prefers-reduced-motion:reduce){.fade-in{animation:none!important}.card,.cf2-action{transition:none!important}html{scroll-behavior:auto!important}}
 
-/* Dhoot 2.1: accessible interactive layout improvements */
+/* CashFlow 2.1: accessible interactive layout improvements */
 .cf21-metric{border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .cf21-metric span{font-size:11px;color:var(--text-3)}
 .cf21-metric strong{font-size:16px;overflow-wrap:anywhere}
@@ -321,7 +321,7 @@ textarea.input { min-height:60px; resize:none; }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 :focus-visible{outline:2px solid var(--blue)!important;outline-offset:3px}
 
-/* Dhoot v38: Earnings dashboard integrated into the original single-file finance app. */
+/* CashFlow v38: Earnings dashboard integrated into the original single-file finance app. */
 .dhoot-money-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .dhoot-money-breakdown>div{background:var(--surface-2);border:1px solid var(--border);border-radius:15px;padding:14px;min-width:0}
 .dhoot-money-breakdown span{display:block;font-size:11px;color:var(--text-2)}
@@ -393,7 +393,7 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
     <div class="brand">
       <div class="brand-icon"><svg data-lucide="activity"></svg></div>
       <div>
-        <div class="brand-name">Dhoot</div>
+        <div class="brand-name">CashFlow</div>
       </div>
     </div>
     <div class="hdr-actions">
@@ -981,7 +981,7 @@ function computeInsights() {
 
   const insights = [];
   if (mi === 0 && me === 0) {
-    insights.push("🌟 Welcome to Dhoot! Add your first transaction to unlock personalized financial insights.");
+    insights.push("🌟 Welcome to CashFlow! Add your first transaction to unlock personalized financial insights.");
   } else {
     if (savingsRate >= 30) insights.push(`💪 Outstanding! You're saving ${savingsRate.toFixed(0)}% of your income this month. That's top-tier financial discipline.`);
     else if (savingsRate >= 15) insights.push(`✨ Nice work — you're saving ${savingsRate.toFixed(0)}% of your income. Push for 30% to accelerate your goals.`);
@@ -1389,10 +1389,10 @@ let CLIENT_WORK = [];
 let clientLedgerError = "";
 let cf21LoadWarnings = [];
 /* Embedded database setup; run manually in Supabase SQL Editor (never from browser). */
-const CLIENT_WORK_SETUP_SQL = "-- Dhoot 2.0: daily client earnings ledger\n-- Run once in Supabase Dashboard -> SQL Editor, while logged in as project owner.\n-- This table records money EARNED but not yet necessarily RECEIVED.\n-- Real payments continue to be written to the existing public.transactions table.\n\ncreate table if not exists public.client_work_entries (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references auth.users(id) on delete cascade,\n  person_id text not null,\n  work_date date not null,\n  amount numeric(14,2) not null check (amount > 0),\n  notes text not null default '',\n  created_at timestamptz not null default now()\n);\n\ncreate index if not exists client_work_entries_user_date_idx\n  on public.client_work_entries (user_id, work_date desc);\n\nalter table public.client_work_entries enable row level security;\n\n-- Securely isolate work entries by signed-in user.\ndrop policy if exists \"client_work_select_own\" on public.client_work_entries;\ncreate policy \"client_work_select_own\" on public.client_work_entries\n  for select to authenticated using (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_insert_own\" on public.client_work_entries;\ncreate policy \"client_work_insert_own\" on public.client_work_entries\n  for insert to authenticated with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_update_own\" on public.client_work_entries;\ncreate policy \"client_work_update_own\" on public.client_work_entries\n  for update to authenticated using (user_id = (select auth.uid()))\n  with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_delete_own\" on public.client_work_entries;\ncreate policy \"client_work_delete_own\" on public.client_work_entries\n  for delete to authenticated using (user_id = (select auth.uid()));\n\ngrant select, insert, update, delete on public.client_work_entries to authenticated;\n";
+const CLIENT_WORK_SETUP_SQL = "-- CashFlow 2.0: daily client earnings ledger\n-- Run once in Supabase Dashboard -> SQL Editor, while logged in as project owner.\n-- This table records money EARNED but not yet necessarily RECEIVED.\n-- Real payments continue to be written to the existing public.transactions table.\n\ncreate table if not exists public.client_work_entries (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references auth.users(id) on delete cascade,\n  person_id text not null,\n  work_date date not null,\n  amount numeric(14,2) not null check (amount > 0),\n  notes text not null default '',\n  created_at timestamptz not null default now()\n);\n\ncreate index if not exists client_work_entries_user_date_idx\n  on public.client_work_entries (user_id, work_date desc);\n\nalter table public.client_work_entries enable row level security;\n\n-- Securely isolate work entries by signed-in user.\ndrop policy if exists \"client_work_select_own\" on public.client_work_entries;\ncreate policy \"client_work_select_own\" on public.client_work_entries\n  for select to authenticated using (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_insert_own\" on public.client_work_entries;\ncreate policy \"client_work_insert_own\" on public.client_work_entries\n  for insert to authenticated with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_update_own\" on public.client_work_entries;\ncreate policy \"client_work_update_own\" on public.client_work_entries\n  for update to authenticated using (user_id = (select auth.uid()))\n  with check (user_id = (select auth.uid()));\n\ndrop policy if exists \"client_work_delete_own\" on public.client_work_entries;\ncreate policy \"client_work_delete_own\" on public.client_work_entries\n  for delete to authenticated using (user_id = (select auth.uid()));\n\ngrant select, insert, update, delete on public.client_work_entries to authenticated;\n";
 function cwCopySetupSQL(){
   if(navigator.clipboard && window.isSecureContext){
-    navigator.clipboard.writeText(CLIENT_WORK_SETUP_SQL).then(()=>alert('SQL copied. Open Supabase → SQL Editor, paste and run once, then refresh Dhoot.')).catch(cwShowSetupSQL);
+    navigator.clipboard.writeText(CLIENT_WORK_SETUP_SQL).then(()=>alert('SQL copied. Open Supabase → SQL Editor, paste and run once, then refresh CashFlow.')).catch(cwShowSetupSQL);
   }else cwShowSetupSQL();
 }
 function cwShowSetupSQL(){
@@ -1426,7 +1426,7 @@ function renderPeople(){
  <div class="card-flat" style="padding:14px"><div class="caption">All-time earned</div><div class="heading-md mono" style="margin-top:6px">${cwMoney(allEarned)}</div></div>
  <div class="card-flat" style="padding:14px"><div class="caption">Net outstanding (all-time)</div><div class="heading-md mono" style="color:var(--amber);margin-top:6px">${cwMoney(allEarned-allPaid)}</div></div></div><p class="caption" style="margin-top:10px">Payments may cover prior weeks; weekly earned minus received is not necessarily this week's outstanding.</p></div>
  <div class="card" style="padding:18px;margin-bottom:16px"><h3 class="heading-md" style="margin-bottom:6px">Record daily work</h3><p class="body-sm" style="margin-bottom:14px">Enter the amount your client owes for work done on that date.</p><form onsubmit="cwSaveWork(event)"><label class="label" for="cw-work-person">Client</label><select id="cw-work-person" class="input" required style="margin:6px 0 12px"><option value="">Choose client</option>${cwOptionList()}</select><div class="grid-2"><div><label class="label" for="cw-work-date">Work date</label><input id="cw-work-date" type="date" value="${dayStr()}" class="input" required style="margin-top:6px"></div><div><label class="label" for="cw-work-amount">Earned ($)</label><input id="cw-work-amount" type="number" min="0.01" step="0.01" placeholder="150.00" class="input" required style="margin-top:6px"></div></div><label class="label" for="cw-work-notes" style="display:block;margin-top:12px">Work notes (optional)</label><input id="cw-work-notes" maxlength="500" placeholder="Project or work description" class="input" style="margin:6px 0 14px"><button id="cw-work-btn" class="btn-primary" type="submit" ${clientLedgerError?'disabled':''}>Save daily earnings</button></form></div>
- <div class="card" style="padding:18px;margin-bottom:18px"><h3 class="heading-md" style="margin-bottom:6px">Record client payment</h3><p class="body-sm" style="margin-bottom:14px">Record money actually received. This creates an income transaction in Dhoot.</p><form onsubmit="cwSavePayment(event)"><label class="label" for="cw-pay-person">Client</label><select id="cw-pay-person" class="input" required style="margin:6px 0 12px"><option value="">Choose client</option>${cwOptionList()}</select><div class="grid-2"><div><label class="label" for="cw-pay-date">Payment date</label><input id="cw-pay-date" type="date" value="${dayStr()}" class="input" required style="margin-top:6px"></div><div><label class="label" for="cw-pay-amount">Received ($)</label><input id="cw-pay-amount" type="number" step="0.01" min="0.01" placeholder="500.00" class="input" required style="margin-top:6px"></div></div><label class="label" for="cw-pay-notes" style="display:block;margin-top:12px">Payment notes (optional)</label><input id="cw-pay-notes" maxlength="500" placeholder="Week paid, transfer reference, etc." class="input" style="margin:6px 0 14px"><button id="cw-pay-btn" class="btn-primary" type="submit">Save received payment</button></form></div>
+ <div class="card" style="padding:18px;margin-bottom:18px"><h3 class="heading-md" style="margin-bottom:6px">Record client payment</h3><p class="body-sm" style="margin-bottom:14px">Record money actually received. This creates an income transaction in CashFlow.</p><form onsubmit="cwSavePayment(event)"><label class="label" for="cw-pay-person">Client</label><select id="cw-pay-person" class="input" required style="margin:6px 0 12px"><option value="">Choose client</option>${cwOptionList()}</select><div class="grid-2"><div><label class="label" for="cw-pay-date">Payment date</label><input id="cw-pay-date" type="date" value="${dayStr()}" class="input" required style="margin-top:6px"></div><div><label class="label" for="cw-pay-amount">Received ($)</label><input id="cw-pay-amount" type="number" step="0.01" min="0.01" placeholder="500.00" class="input" required style="margin-top:6px"></div></div><label class="label" for="cw-pay-notes" style="display:block;margin-top:12px">Payment notes (optional)</label><input id="cw-pay-notes" maxlength="500" placeholder="Week paid, transfer reference, etc." class="input" style="margin:6px 0 14px"><button id="cw-pay-btn" class="btn-primary" type="submit">Save received payment</button></form></div>
  <div class="section-head"><h3 class="heading-md">Your clients</h3><span class="count-badge">${PEOPLE.length}</span></div>
  ${PEOPLE.length?PEOPLE.map(p=>{const earned=cwTotal(cwEntries(p.id),'amount'),paid=cwTotal(cwPayments(p.id),'amount');return `<div class="card-flat list-item" style="margin-bottom:9px"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.9rem">${esc(p.name)}</div><div class="caption">Earned ${cwMoney(earned)} · Received ${cwMoney(paid)}</div></div><button class="pill" aria-label="View client history" onclick='openPersonHistory(${JSON.stringify(p.id)})'>History ${icon('chevron-right')}</button><button class="pill" aria-label="Download client statement" onclick='cf21ClientCSV(${JSON.stringify(p.id)})'>${icon('download')} Statement</button></div><div style="font-size:.78rem;margin-top:8px;color:${earned-paid>0?'var(--amber)':'var(--green)'}">${earned-paid>=0?'Outstanding':'Overpaid / credit'}: <strong>${cwMoney(Math.abs(earned-paid))}</strong></div></div>`}).join(''):emptyBlock('users','No clients yet','Add a client to begin tracking daily earnings.')}
  <button class="btn-primary" style="margin:12px 0 22px" onclick="openPersonForm()">${icon('plus')} Add client</button>
@@ -2306,7 +2306,7 @@ function renderDashboard() {
     <div class="dhoot-unified-foot">${wt.hours.toFixed(2)} paid hours · ${wt.count} recorded shifts · Average ${avgDailyHours.toFixed(2)} hours/day · straight-time estimated wages only</div>
   </section>` : `<div class="cf2-banner warn" role="alert">Work records did not load, so the earnings overview is unavailable. <button onclick="switchTab('work')" style="text-decoration:underline">View setup details</button>.</div>`;
   const cf2Header = `<section class="cf2-hero dhoot-unified-hero">
-    <div class="cf2-kicker">${icon("layers",'style="width:14px;height:14px;vertical-align:middle"')} Dhoot · Monthly overview · ${esc(thisM)}</div>
+    <div class="cf2-kicker">${icon("layers",'style="width:14px;height:14px;vertical-align:middle"')} CashFlow · Monthly overview · ${esc(thisM)}</div>
     <div class="cf2-total">${workReady?fmt(wt.earned):'—'}</div>
     <div class="cf2-kicker">${workReady ? overviewLine : 'Estimated work earnings this month'}</div>
     <div class="dhoot-unified-metrics">
@@ -2969,7 +2969,7 @@ function toggleForm(id) { const el = document.getElementById(id); const isOpen =
    RENDER: TOOLS TAB
    ══════════════════════════════════════════════ */
 
-/* Dhoot 2.1: client reports, transparent forecasts and portable backup.
+/* CashFlow 2.1: client reports, transparent forecasts and portable backup.
    Calculations use only records loaded for the currently signed-in user. */
 function cf21SafeCSV(v){
   let t=String(v==null?'':v);
@@ -2990,7 +2990,7 @@ function cf21ClientCSV(personId){
   const earned=cwTotal(work,'amount'),paid=cwTotal(received,'amount');
   const report=[['Client','Date','Entry','Amount (USD)','Notes'],...rows.map(r=>[person.name,r.date,r.type,r.amount.toFixed(2),r.notes]),['TOTAL','', 'Earned',earned.toFixed(2),''],['TOTAL','', 'Received',paid.toFixed(2),''],['BALANCE','',earned>=paid?'Outstanding':'Client credit',Math.abs(earned-paid).toFixed(2),'']];
   const csv='\ufeff'+report.map(cols=>cols.map(cf21SafeCSV).join(',')).join('\r\n');
-  cf21DownloadText(csv,'Dhoot_Client_'+dayStr()+'_'+String(person.name).replace(/[^a-z0-9_-]/gi,'_').slice(0,45)+'.csv');
+  cf21DownloadText(csv,'CashFlow_Client_'+dayStr()+'_'+String(person.name).replace(/[^a-z0-9_-]/gi,'_').slice(0,45)+'.csv');
 }
 function cf21ClientOverview(){
   if(!PEOPLE.length&&!CLIENT_WORK.length)return '';
@@ -3010,7 +3010,7 @@ function cf21DownloadBackup(){
     transactions:TXS,budgets:BUDGETS,goals:GOALS,bills:BILLS,recurring:RECURRING,
     friends:FRIENDS,people:PEOPLE,expenseSplits:SPLITS,splitParticipants:PARTICIPANTS,
     clientWork:CLIENT_WORK};
-  cf21DownloadText(JSON.stringify(data,null,2),'Dhoot_Backup_'+dayStr()+'.json','application/json');
+  cf21DownloadText(JSON.stringify(data,null,2),'CashFlow_Backup_'+dayStr()+'.json','application/json');
 }
 function cf21Forecast(days){
   // Simple transparent projection: 90 calendar-day observed USD daily averages.
@@ -3159,7 +3159,7 @@ async function exportPDF() {
   const doc = new jsPDF();
   const { data: { user } } = await sb.auth.getUser();
   let y = 20;
-  doc.setFontSize(18); doc.setTextColor(99,107,255); doc.text("Dhoot", 14, y);
+  doc.setFontSize(18); doc.setTextColor(99,107,255); doc.text("CashFlow", 14, y);
   doc.setFontSize(9); doc.setTextColor(140,140,150); doc.text(exportReportTitle(), 14, y+7);
   y += 18;
   doc.setFontSize(9); doc.setTextColor(90,90,100);
@@ -3495,7 +3495,7 @@ function renderAuthScreen() {
   const card = document.getElementById("auth-card");
   const brand = `<div class="brand" style="justify-content:center;margin-bottom:22px">
       <div class="brand-icon">${icon("activity")}</div>
-      <div><div class="brand-name">Dhoot</div></div>
+      <div><div class="brand-name">CashFlow</div></div>
     </div>`;
   const msgs = `<p id="auth-error" style="color:var(--red);font-size:.75rem;margin-bottom:10px;display:none"></p>
     <p id="auth-info" style="color:var(--text-3);font-size:.75rem;margin-bottom:10px;display:none"></p>`;
@@ -3644,7 +3644,7 @@ async function startApp() {
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
       CLIENT_WORK = []; dhootWork = []; dhootRates = []; dhootClock = null; dhootWorkError = ""; clientLedgerError = ""; cf21LoadWarnings=[]; _cachedUserId = null;
-      CHAT_MSGS = [{role:'assistant',html:'Welcome to Dhoot. Sign in to view your private chat history.'}];
+      CHAT_MSGS = [{role:'assistant',html:'Welcome to CashFlow. Sign in to view your private chat history.'}];
     }
   });
 }
@@ -3748,7 +3748,7 @@ CREATE INDEX IF NOT EXISTS dhoot_parts_split ON public.split_participants(split_
 COMMIT;
 NOTIFY pgrst, 'reload schema';
 
--- Dhoot work tracking: additive tables, RLS and clock RPC.
+-- CashFlow work tracking: additive tables, RLS and clock RPC.
 -- Do not run database reset scripts or migrate by swapping API keys.
 begin;
 create table if not exists public.dhoot_work_rates(
@@ -3912,13 +3912,13 @@ function dhootExportHours(periodFrom,periodTo,periodLabel){
  let totalHours=0,totalGross=0;
  const data=rows.map(s=>{const b=breakdown.get(s.id)||{h:Number(s.paid_hours)||0,rate:0,gross:0};totalHours+=b.h;totalGross+=b.gross;return [s.work_date,String(s.start_time).slice(0,5),String(s.end_time).slice(0,5),s.break_minutes, b.h.toFixed(2),b.rate.toFixed(2),b.gross.toFixed(2)]});
  const csvSafe=v=>{let text=String(v??'');if(/^[\s]*[=+@-]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'};
- const lines=[['Dhoot - My Hours Report'],...(periodLabel?[['Pay period',periodLabel]]:[]),['Date range',from||'All dates',to||'All dates'],['Recorded shifts',String(rows.length)],['Total paid hours',totalHours.toFixed(2)],['Total estimated earnings (USD)',totalGross.toFixed(2)],[],cols,...data];
+ const lines=[['CashFlow - My Hours Report'],...(periodLabel?[['Pay period',periodLabel]]:[]),['Date range',from||'All dates',to||'All dates'],['Recorded shifts',String(rows.length)],['Total paid hours',totalHours.toFixed(2)],['Total estimated earnings (USD)',totalGross.toFixed(2)],[],cols,...data];
  const output='\ufeff'+lines.map(r=>r.map(csvSafe).join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([output],{type:'text/csv;charset=utf-8'}));
- const a=document.createElement('a');a.href=url;a.download='Dhoot-My-Hours-'+(periodLabel?periodLabel+'-':'')+(from||'all')+'-to-'+(to||'all')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+ const a=document.createElement('a');a.href=url;a.download='CashFlow-My-Hours-'+(periodLabel?periodLabel+'-':'')+(from||'all')+'-to-'+(to||'all')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
 }
 function dhootExportShifts(){dhootExportHours();}
-async function dhootCopySQL(){const el=document.getElementById('dhoot-sql-view');el.style.display='block';el.value=document.getElementById('dhoot-db-sql').textContent;try{await navigator.clipboard.writeText(el.value);alert('SQL copied. Run in your Dhoot Supabase SQL Editor after taking a backup. This installs finance and work tables; it does not migrate old data.')}catch{el.select()}}
+async function dhootCopySQL(){const el=document.getElementById('dhoot-sql-view');el.style.display='block';el.value=document.getElementById('dhoot-db-sql').textContent;try{await navigator.clipboard.writeText(el.value);alert('SQL copied. Run in your CashFlow Supabase SQL Editor after taking a backup. This installs finance and work tables; it does not migrate old data.')}catch{el.select()}}
 </script>
 
 <style id="dhoot-v35-style">
@@ -3927,9 +3927,9 @@ async function dhootCopySQL(){const el=document.getElementById('dhoot-sql-view')
 .d35-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.d35-select{padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-1)}.d35-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--border);padding:12px 0}.d35-row small{display:block;color:var(--text-3);font-size:11px}.d35-btn{border-radius:12px;padding:10px 14px;background:var(--grad-1);color:#fff;font-weight:700}.d35-btn:disabled{opacity:.45}.d35-muted{font-size:12px;color:var(--text-2);line-height:1.65}.d35-alert{padding:12px;border-radius:12px;background:var(--amber-soft);font-size:12px;line-height:1.5;margin:12px 0}
 @media(max-width:550px){.d35-grid{grid-template-columns:1fr 1fr}.d35-card{padding:15px}}
 </style>
-<template id="dhoot-v35-sql">-- Dhoot v35 corrected upgrade (compatible with BIGINT or UUID transactions.id)
+<template id="dhoot-v35-sql">-- CashFlow v35 corrected upgrade (compatible with BIGINT or UUID transactions.id)
 -- Preserves existing transactions, work shifts and financial records.
--- Run AFTER the Dhoot work tables have been installed.
+-- Run AFTER the CashFlow work tables have been installed.
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DO $dhoot$
@@ -3942,7 +3942,7 @@ BEGIN
   WHERE a.attrelid = to_regclass('public.transactions')
     AND a.attname = 'id' AND a.attnum &gt; 0 AND NOT a.attisdropped;
   IF id_type IS NULL THEN
-    RAISE EXCEPTION 'public.transactions(id) is missing. Install the existing Dhoot finance schema first.';
+    RAISE EXCEPTION 'public.transactions(id) is missing. Install the existing CashFlow finance schema first.';
   END IF;
   IF id_type NOT IN ('bigint','uuid','integer') THEN
     RAISE EXCEPTION 'Unsupported transactions.id type: %', id_type;
@@ -4066,12 +4066,12 @@ window.dhootSubmitEdit=async function(event){
  finally{dhootWorkBusy=false;btn.disabled=false;}
 };
 const baseDashboard=renderDashboard;
-renderDashboard=function(){let html=baseDashboard();const recordedCashFlow=TXS.filter(t=>t.currency==='USD').reduce((n,t)=>n+(t.type==='income'?1:-1)*Number(t.amount||0),0);const workTotals=dhootWorkError?null:dhootWorkTotals();const hoursPay=workTotals?Number(workTotals.earned||0):null;const combinedTotal=workTotals?(recordedCashFlow+hoursPay):null;const currentMonth=clean(monthStr(new Date()));const head=`<section class="d35-card"><div class="d35-top"><div><p class="label">Dhoot smart overview</p><h2 class="heading-lg" style="margin-top:4px">Your work and money</h2></div><button class="pill active" onclick="switchTab('work')">View pay periods →</button></div><div class="d35-grid"><div class="d35-metric"><small>Recorded cash flow</small><strong>${money(recordedCashFlow)}</strong></div><div class="d35-metric"><small>Pay for hours · ${currentMonth}</small><strong>${workTotals?money(hoursPay):'Unavailable'}</strong></div><div class="d35-metric"><small>Total cash flow + hours pay · ${currentMonth}</small><strong>${workTotals?money(combinedTotal):'Unavailable'}</strong></div></div><p class="d35-muted">Box 1 shows recorded cash flow from transactions. Box 2 shows the pay calculated from recorded work hours and applicable rates. Box 3 is Box 1 + Box 2. No overtime premium is included.</p></section>`;html=html.replace(/<section class="cf2-hero dhoot-unified-hero">[\s\S]*?<div class="cf2-actions">/, '<div class="cf2-actions">');return head+html;};
+renderDashboard=function(){let html=baseDashboard();const recordedCashFlow=TXS.filter(t=>t.currency==='USD').reduce((n,t)=>n+(t.type==='income'?1:-1)*Number(t.amount||0),0);const workTotals=dhootWorkError?null:dhootWorkTotals();const hoursPay=workTotals?Number(workTotals.earned||0):null;const combinedTotal=workTotals?(recordedCashFlow+hoursPay):null;const currentMonth=clean(monthStr(new Date()));const head=`<section class="d35-card"><div class="d35-top"><div><p class="label">CashFlow smart overview</p><h2 class="heading-lg" style="margin-top:4px">Your work and money</h2></div><button class="pill active" onclick="switchTab('work')">View pay periods →</button></div><div class="d35-grid"><div class="d35-metric"><small>Recorded cash flow</small><strong>${money(recordedCashFlow)}</strong></div><div class="d35-metric"><small>Pay for hours · ${currentMonth}</small><strong>${workTotals?money(hoursPay):'Unavailable'}</strong></div><div class="d35-metric"><small>Total cash flow + hours pay · ${currentMonth}</small><strong>${workTotals?money(combinedTotal):'Unavailable'}</strong></div></div><p class="d35-muted">Box 1 shows recorded cash flow from transactions. Box 2 shows the pay calculated from recorded work hours and applicable rates. Box 3 is Box 1 + Box 2. No overtime premium is included.</p></section>`;html=html.replace(/<section class="cf2-hero dhoot-unified-hero">[\s\S]*?<div class="cf2-actions">/, '<div class="cf2-actions">');return head+html;};
 const baseWork=dhootWorkView;
 dhootWorkView=function(){let html=baseWork();html=html.replace(/(<button class="pill"[^>]*onclick="dhootDeleteShift\(')([^']+)('\)"[^>]*>Delete<\/button>)/g,`<button class="pill" onclick="d35EditShift('$2')">Edit</button>$1`);return reconciler()+html;};
 const baseTools=renderTools;
 renderTools=function(){const html=baseTools();return `<section class="d35-card"><h3 class="heading-md">Pay period statements</h3><p class="d35-muted">Download your work hours by pay period, or export the reconciliation summary for a selected month.</p><div class="d35-top" style="margin-top:12px"><input class="d35-select" type="month" id="d35-tools-month" value="${clean(selectedMonth)}"><button class="d35-btn" onclick="d35ExportPeriodCSV()">Export paycheck summary (CSV)</button></div><p class="d35-muted">Additional exports for hours, transactions, PDF, and Excel remain below.</p></section>`+html;};
-window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-tools-month')?.value||selectedMonth;if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))return alert('Select a valid month.');if(dhootWorkError||receiptError)return alert('Work or payment data is unavailable; complete setup before exporting.');const rows=[['Pay period','From','Through','Hours worked','Estimated gross USD','Linked received USD','Unpaid estimate USD']];for(let half=1;half<=2;half++){const p=dhootPeriodTotals(month,half),got=receiptPeriod(month,half);rows.push(['PC'+half,p.from,p.to,p.hours.toFixed(2),p.gross.toFixed(2),got.toFixed(2),(p.gross-got).toFixed(2)]);}const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download=`Dhoot-Paycheck-Summary-${month}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);};
+window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-tools-month')?.value||selectedMonth;if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))return alert('Select a valid month.');if(dhootWorkError||receiptError)return alert('Work or payment data is unavailable; complete setup before exporting.');const rows=[['Pay period','From','Through','Hours worked','Estimated gross USD','Linked received USD','Unpaid estimate USD']];for(let half=1;half<=2;half++){const p=dhootPeriodTotals(month,half),got=receiptPeriod(month,half);rows.push(['PC'+half,p.from,p.to,p.hours.toFixed(2),p.gross.toFixed(2),got.toFixed(2),(p.gross-got).toFixed(2)]);}const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download=`CashFlow-Paycheck-Summary-${month}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);};
 })();
 </script>
 
@@ -4163,7 +4163,7 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
 </script>
 
 <script id="dhoot-ai-v44">
-/* Dhoot AI Insights 2.0 - deterministic on-device analysis of loaded records.
+/* CashFlow AI Insights 2.0 - deterministic on-device analysis of loaded records.
    Does not send questions to an external AI model. Supabase loading is unchanged. */
 (function(){
  const originalAnswer=answerFinanceQuestion;
@@ -4193,11 +4193,11 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  if(/(spent|spend|expense|income)/.test(q))return intro+moneyRow('Income',usd(a.inc))+moneyRow('Spending',usd(a.exp))+moneyRow('Net cash flow',usd(a.cash));
  return originalAnswer(input);
  };
- answerFinanceQuestion=function(q){try{return answer(q)}catch(err){console.warn('Dhoot Ask error',err);return 'I could not compute that answer from the loaded records. Try again after refreshing the data.'}};
+ answerFinanceQuestion=function(q){try{return answer(q)}catch(err){console.warn('CashFlow Ask error',err);return 'I could not compute that answer from the loaded records. Try again after refreshing the data.'}};
  window.daiSetMonth=function(value){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(value))return;try{sessionStorage.setItem(currentUserKey(),value)}catch(_e){}renderMain();};
- window.daiExportChat=function(){const plain=CHAT_MSGS.map(m=>m.role.toUpperCase()+': '+m.html.replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')).join('\n\n');const file=new Blob([plain],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(file);const anchor=document.createElement('a');anchor.href=url;anchor.download='Dhoot_Ask_History.txt';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),2000)};
+ window.daiExportChat=function(){const plain=CHAT_MSGS.map(m=>m.role.toUpperCase()+': '+m.html.replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')).join('\n\n');const file=new Blob([plain],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(file);const anchor=document.createElement('a');anchor.href=url;anchor.download='CashFlow_Ask_History.txt';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),2000)};
  const oldRender=renderAsk;
- renderAsk=function(){const m=getMonth(),t=totals(m),questions=['How much did I earn this month?','Compare PC1 and PC2','Where am I spending the most?','Generate my monthly financial report','Show my earnings trend','How many hours did I work?'];const inner=`<div class="dai-shell"><div class="dai-head"><div><div class="dai-kicker">✦ Dhoot AI Insights 2.0</div><h1 class="heading-lg" style="margin:7px 0">Your finance & earnings assistant</h1><p class="dai-muted">Private rule-based answers using your loaded records. No external AI service; data still syncs through Supabase.</p></div><div class="dai-actions"><button onclick="daiExportChat()" title="Download chat history">${icon('download')} Export chat</button><button onclick="clearChat()" title="Clear history">${icon('rotate-ccw')} Clear</button></div></div><section class="dai-panel"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><strong>Monthly financial snapshot</strong><input class="input" type="month" value="${safe(m)}" aria-label="Ask insights month" onchange="daiSetMonth(this.value)" style="width:170px"></div><div class="dai-grid" style="margin-top:15px"><div class="dai-metric"><small>Recorded cash flow</small><strong>${usd(t.cash)}</strong></div><div class="dai-metric"><small>Hours pay (estimate)</small><strong>${t.work?usd(t.work.earned):'Unavailable'}</strong></div><div class="dai-metric"><small>Combined display total</small><strong>${t.work?usd(t.cash+t.work.earned):'Unavailable'}</strong></div></div><p class="dai-muted" style="margin-top:12px">Cash flow + hours pay can include the same wages twice if paycheck income has already been recorded in Transactions.</p></section><section class="dai-panel"><strong>Try asking</strong><div class="dai-chiprow">${questions.map((q,i)=>`<button class="dai-chip" onclick="daiAskQuick(${i})">${safe(q)}</button>`).join('')}</div></section><div class="chat-messages dai-answers" id="chat-messages" aria-live="polite">${CHAT_MSGS.map(chatBubbleHtml).join('')}</div><div style="height:175px"></div></div>`;return inner;};
+ renderAsk=function(){const m=getMonth(),t=totals(m),questions=['How much did I earn this month?','Compare PC1 and PC2','Where am I spending the most?','Generate my monthly financial report','Show my earnings trend','How many hours did I work?'];const inner=`<div class="dai-shell"><div class="dai-head"><div><div class="dai-kicker">✦ CashFlow AI Insights 2.0</div><h1 class="heading-lg" style="margin:7px 0">Your finance & earnings assistant</h1><p class="dai-muted">Private rule-based answers using your loaded records. No external AI service; data still syncs through Supabase.</p></div><div class="dai-actions"><button onclick="daiExportChat()" title="Download chat history">${icon('download')} Export chat</button><button onclick="clearChat()" title="Clear history">${icon('rotate-ccw')} Clear</button></div></div><section class="dai-panel"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><strong>Monthly financial snapshot</strong><input class="input" type="month" value="${safe(m)}" aria-label="Ask insights month" onchange="daiSetMonth(this.value)" style="width:170px"></div><div class="dai-grid" style="margin-top:15px"><div class="dai-metric"><small>Recorded cash flow</small><strong>${usd(t.cash)}</strong></div><div class="dai-metric"><small>Hours pay (estimate)</small><strong>${t.work?usd(t.work.earned):'Unavailable'}</strong></div><div class="dai-metric"><small>Combined display total</small><strong>${t.work?usd(t.cash+t.work.earned):'Unavailable'}</strong></div></div><p class="dai-muted" style="margin-top:12px">Cash flow + hours pay can include the same wages twice if paycheck income has already been recorded in Transactions.</p></section><section class="dai-panel"><strong>Try asking</strong><div class="dai-chiprow">${questions.map((q,i)=>`<button class="dai-chip" onclick="daiAskQuick(${i})">${safe(q)}</button>`).join('')}</div></section><div class="chat-messages dai-answers" id="chat-messages" aria-live="polite">${CHAT_MSGS.map(chatBubbleHtml).join('')}</div><div style="height:175px"></div></div>`;return inner;};
  window.daiAskQuick=function(i){const questions=['How much did I earn this month?','Compare PC1 and PC2','Where am I spending the most?','Generate my monthly financial report','Show my earnings trend','How many hours did I work?'];if(Number.isInteger(i)&&questions[i])askSuggested(questions[i]);};
  buildChatSuggestions=function(){const el=document.getElementById('chat-suggest');if(el)el.innerHTML='';};
 })();
