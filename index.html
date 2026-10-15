@@ -361,6 +361,19 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
 .dhoot-unified-period small,.dhoot-unified-foot{font-size:11px;color:var(--text-3)}.dhoot-unified-foot{margin-top:13px;line-height:1.5}
 @media(max-width:420px){.dhoot-unified-metrics{grid-template-columns:1fr 1fr}.dhoot-unified-period strong{font-size:18px}.dhoot-unified-heading{flex-wrap:wrap}}
 </style>
+
+<style id="dhoot-work-visual-v40">
+.d40-work{max-width:640px;margin:auto;display:grid;gap:16px}.d40-card{background:var(--surface-1);border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow-sm)}
+.d40-period-tabs,.d40-kpis,.d40-period-break{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.d40-tab{padding:13px 6px;border-radius:13px;border:1px solid #f8caa9;background:rgba(255,123,49,.09);color:#ff842c;font-weight:800;font-size:13px}.d40-tab:last-child{color:#13b7c1;background:rgba(24,193,203,.08);border-color:#b2eaf0}.d40-tab.active{outline:2px solid currentColor;outline-offset:1px}
+.d40-kpi{border:1px solid var(--border);border-radius:15px;padding:16px;position:relative;overflow:hidden}.d40-kpi:before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#ff8035}.d40-kpi:last-child:before{background:#19c1c7}.d40-kpi small{display:block;font-weight:750;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);font-size:10px}.d40-kpi strong{font-size:clamp(19px,4vw,27px);display:block;margin-top:8px}
+.d40-head{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px}.d40-head h2{font-size:16px;font-weight:800}.d40-tiny{color:var(--text-3);font-size:11px;line-height:1.5}.d40-goal{margin:16px 0}.d40-goal-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:750}.d40-goal p{font-size:10px;color:var(--text-3);margin-top:3px}.d40-meter{height:10px;border-radius:50px;background:var(--surface-2);margin-top:9px;overflow:hidden}.d40-fill{height:100%;border-radius:inherit;background:#ff8035}.d40-goal:nth-of-type(2) .d40-fill{background:#18c1c8}.d40-goal:nth-of-type(3) .d40-fill{background:linear-gradient(90deg,#ff8035,#18c1c8)}
+.d40-donut{width:170px;height:170px;margin:20px auto 24px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(#ff8035 0 var(--d40-pct),#18c1c8 var(--d40-pct) 100%)}.d40-donut:before{content:'';position:absolute;inset:23px;background:var(--surface-3);border-radius:50%}.d40-donut-label{position:relative;z-index:1;text-align:center}.d40-donut-label small{font-size:10px;color:var(--text-3)}.d40-donut-label strong{display:block;font-size:20px}
+.d40-pay{padding:13px 15px;border-radius:13px;margin:8px 0;display:flex;justify-content:space-between;gap:10px;align-items:center}.d40-pay strong{font-size:20px}.d40-pay.orange{background:rgba(255,128,53,.09);color:#fa8c3a}.d40-pay.teal{background:rgba(24,193,200,.09);color:#17b7c0}.d40-month-list{margin-top:20px}.d40-month-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 0;border-top:1px solid var(--border);font-size:12px}.d40-month-row small{font-size:10px;color:var(--text-3)}
+.d40-form{display:grid;gap:11px}.d40-form label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--text-2)}.d40-form .input{min-height:45px}.d40-submit{width:100%;border-radius:12px;background:linear-gradient(105deg,#ff7430,#ffad62);color:#fff;padding:13px 15px;font-size:14px;font-weight:800}
+.d40-history-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px 0;border-top:1px solid var(--border)}.d40-history-row:first-child{border-top:0}.d40-history-row strong{font-size:14px}.d40-history-row p{font-size:11px;color:var(--text-3);margin:4px 0}.d40-history-controls{display:flex;gap:5px}.d40-history-controls button{font-size:11px;padding:7px 9px;border-radius:8px;background:var(--surface-2);color:var(--text-2)}.d40-history-controls button:last-child{color:var(--red)}.d40-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.d40-muted{font-size:11px;color:var(--text-3);line-height:1.5}.d40-goal-editor{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.d40-goal-editor.open{display:grid}.d40-goal-editor label{font-size:11px}.d40-goal-editor button{grid-column:1/-1}
+@media(max-width:410px){.d40-card{padding:14px}.d40-period-tabs{gap:7px}.d40-tab{font-size:11px}.d40-kpi{padding:11px}.d40-pay strong{font-size:17px}}
+</style>
 </head>
 <body>
 
@@ -401,7 +414,6 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
   <div class="nav-inner glass-strong">
     <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
     <button class="pill nav-btn" data-tab="work" onclick="switchTab('work')"><svg data-lucide="clock-3"></svg><span>Work</span></button>
-    <button class="pill nav-btn" data-tab="afford" onclick="switchTab('afford')"><svg data-lucide="wallet-cards"></svg><span>Can I Afford?</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
     <button class="pill nav-btn" data-tab="manage" onclick="switchTab('manage')"><svg data-lucide="target"></svg><span>Manage</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
@@ -1584,7 +1596,6 @@ function renderMain() {
   const el = document.getElementById("main-content");
   if (state.tab === "work") el.innerHTML = dhootWorkView();
    else if (state.tab === "story") el.innerHTML = renderDashboard();
-  else if (state.tab === "afford") el.innerHTML = renderAffordPage();
   else if (state.tab === "calendar") el.innerHTML = renderCalendar();
   else if (state.tab === "manage") el.innerHTML = renderManage();
   else if (state.tab === "tools") el.innerHTML = renderTools();
@@ -1595,7 +1606,6 @@ function renderMain() {
   }
   el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in");
   refreshIcons();
-  if (state.tab === "afford") updateAffordCalculator();
 }
 
 /* ══════════════════════════════════════════════
@@ -2241,27 +2251,6 @@ function updateAffordReserve() {
   document.getElementById("cf2-safe").textContent=d.safe===null?"Set starting balance":fmt(Math.max(0,d.safe));
   updateAffordCalculator();
 }
-function renderAffordPage() {
-  const d=computeAffordData();
-  return `<div style="margin-bottom:22px"><p class="label">Dhoot planner</p><h1 class="heading-lg" style="margin:6px 0">Can I Afford This?</h1><p class="body-sm">See how a purchase might affect your budget before spending.</p></div>
-  <section class="cf2-panel">
-    <div class="cf2-section-title">${icon("calculator")} Your spending plan</div>
-    <div class="cf2-field"><label for="cf2-opening">Starting USD balance (optional)</label><input id="cf2-opening" class="input" type="number" step="0.01" placeholder="Enter your balance before these records" value="${d.opening===null?'':d.opening}"><button class="pill active" style="margin-top:8px" onclick="cf2SaveOpening()">Save starting balance</button></div>
-    <div class="cf2-line"><span>Recorded USD cash flow (all time)</span><strong>${fmt(d.recorded)}</strong></div>
-    <div class="cf2-line"><span>Estimated USD ledger balance</span><strong>${d.total===null?'Not configured':fmt(d.total)}</strong></div>
-    <div class="cf2-line"><span>Unpaid upcoming bills (30 days)</span><strong>−${fmt(d.bills)}</strong></div>
-    <div class="cf2-field"><label for="cf2-reserve">Money to keep aside ($)</label><input id="cf2-reserve" class="input" type="number" min="0" step="0.01" value="${d.reserve}" oninput="updateAffordReserve()"></div>
-    <div class="cf2-line"><span>Estimated room to spend</span><strong id="cf2-safe">${d.safe===null?"Set starting balance":fmt(Math.max(0,d.safe))}</strong></div>
-    <p class="cf2-note">Starting balance is stored in this browser, not synced to Supabase. Use the balance immediately before your recorded transactions began; do not enter today’s balance or earlier transactions may be double-counted. Estimates exclude unrecorded spending and are not live bank balances. ${d.excluded?`${d.excluded} non-USD transaction(s) excluded.`:""}</p>
-  </section>
-  <section class="cf2-panel"><div class="cf2-section-title">${icon("shopping-bag")} Test a purchase</div>
-    <div class="cf2-field"><label for="cf2-purchase">Purchase amount ($)</label><input id="cf2-purchase" class="input" type="number" min="0" step="0.01" value="600" oninput="updateAffordCalculator()"></div>
-    <div class="balance-meter"><div class="balance-meter-fill" id="cf2-progress" style="width:0%"></div></div>
-    <div id="cf2-result" class="cf2-status good"></div>
-    <p class="cf2-note">For now, the planner assumes your transactions and bills are in USD. Multi-currency forecasting will require conversion rates and an account-based balance model.</p>
-  </section>
-  <button class="btn-primary" onclick="openModal()">${icon("plus")} Record a transaction</button>`;
-}
 function renderDashboard() {
   const health = computeFinancialHealthScore();
   const trend = computeHealthTrend();
@@ -2334,17 +2323,8 @@ function renderDashboard() {
   </section>
   <div class="cf2-actions">
     <button class="cf2-action" onclick="openModal()">${icon("plus-circle")}Add transaction</button>
-    <button class="cf2-action" onclick="switchTab('afford')">${icon("wallet-cards")}Can I afford?</button>
     <button class="cf2-action" onclick="openSplitwiseHub()">${icon("users")}Split expense</button>
-  </div>
-  <section class="cf2-panel">
-    <div class="cf2-section-title">${icon("sparkles")} Plan ahead</div>
-    <div class="cf2-line"><span>Upcoming bills (30 days)</span><strong>${fmt(cf2.bills)}</strong></div>
-    <div class="cf2-line"><span>Planning reserve</span><strong>${fmt(cf2.reserve)}</strong></div>
-    <div class="cf2-line"><span>Estimated room to spend</span><strong style="color:${cf2.safe>=0?'var(--green)':'var(--red)'}">${cf2.safe===null?"Set starting balance":fmt(Math.max(0,cf2.safe))}</strong></div>
-    <p class="cf2-note">Based on USD records, eligible upcoming USD bills and your reserve. Starting balance is browser-only. Not a verified bank balance.</p>
-    <button class="pill active" style="margin-top:12px" onclick="switchTab('afford')">Check a purchase ${icon("arrow-right")}</button>
-  </section>`;
+  </div>`;
   const scoreColor = health.overall >= 75 ? "var(--green)" : health.overall >= 50 ? "var(--yellow, #e0a63c)" : "var(--red)";
   const breakdownRow = (label, val) => `<div style="flex:1;text-align:center">
     <div class="mono" style="font-size:.9375rem;font-weight:700;color:${val>=70?"var(--green)":val>=50?"var(--text-1)":"var(--red)"}">${val}</div>
@@ -4107,5 +4087,50 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
   </form>
  </section>
 </div>
+
+<script id="dhoot-work-visual-v40-script">
+(function(){
+ 'use strict';
+ let workMonth = monthStr(new Date());
+ let filterHalf=0;
+ const mny=n=>fmt(Number(n)||0,'USD');
+ const safe=v=>esc(String(v??''));
+ const monthsLabel=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+ function goalKey(){return 'dhoot-work-goals-v40-'+(typeof USER!=='undefined'&&USER?.id?USER.id:'local');}
+ function goals(){try{const g=JSON.parse(localStorage.getItem(goalKey())||'{}');return [Math.max(1,Number(g.pc1)||1800),Math.max(1,Number(g.pc2)||1800)];}catch{return [1800,1800];}}
+ function goalBar(title,amount,target,color,sub){const percent=Math.min(100,Math.max(0,target>0?amount/target*100:0));return `<div class="d40-goal"><div class="d40-goal-top"><span>${title}</span><span style="color:${color}">${mny(amount)} <span style="color:var(--text-3)">/ ${mny(target)}</span></span></div><p>${sub}</p><div class="d40-meter"><div class="d40-fill" style="width:${percent.toFixed(2)}%;background:${color}"></div></div><p style="text-align:right">${(target>0?amount/target*100:0).toFixed(1)}%</p></div>`;}
+ window.d40SetMonth=value=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(value)){workMonth=value;renderMain();}};
+ window.d40Half=h=>{filterHalf=filterHalf===h?0:h;renderMain();};
+ window.d40ToggleGoals=()=>document.getElementById('d40-goal-editor')?.classList.toggle('open');
+ window.d40SaveGoals=event=>{event.preventDefault();const f=event.target;const a=Number(f.pc1.value),b=Number(f.pc2.value);if(!Number.isFinite(a)||!Number.isFinite(b)||a<=0||b<=0)return alert('Enter goals greater than zero.');localStorage.setItem(goalKey(),JSON.stringify({pc1:a,pc2:b}));renderMain();};
+ function period(month,h){return dhootPeriodTotals(month,h);}
+ dhootWorkView=function(){
+ const p1=period(workMonth,1),p2=period(workMonth,2),earned=p1.gross+p2.gross,hours=p1.hours+p2.hours,[goal1,goal2]=goals(),totalGoal=goal1+goal2;
+ const allMonths=[...new Set(dhootWork.map(s=>String(s.work_date).slice(0,7)))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort().reverse().slice(0,8);
+ const share=earned>0?(p1.gross/earned*100):50;
+ const entries=dhootWork.filter(s=>String(s.work_date).slice(0,7)===workMonth&&(!filterHalf||(filterHalf===1?Number(s.work_date.slice(8,10))<=15:Number(s.work_date.slice(8,10))>=16))).sort((a,b)=>String(b.work_date).localeCompare(String(a.work_date)));
+ const breakdown=dhootBreakdown(),active=dhootClock,working=active?.status==='working',onBreak=active?.status==='break';
+ return `<div class="d40-work fade-in">
+ <div class="d40-head" style="margin-bottom:0"><div><div class="label">WORK / PAYROLL</div><h1 class="heading-lg" style="margin-top:5px">Work & Earnings</h1></div><label class="d40-tiny">Month <input type="month" class="input" aria-label="Payroll month" value="${safe(workMonth)}" onchange="d40SetMonth(this.value)" style="margin-top:4px;max-width:180px"></label></div>
+ ${dhootWorkError?`<section class="dhoot-error"><b>Work database setup needed</b><p>${safe(dhootWorkError)}</p><button class="dhoot-btn primary" onclick="dhootCopySQL()">Copy setup SQL</button><textarea id="dhoot-sql-view" class="input" style="display:none" readonly></textarea></section>`:''}
+ <div class="d40-period-tabs"><button class="d40-tab ${filterHalf===1?'active':''}" onclick="d40Half(1)">💼 PC1 (1–15)</button><button class="d40-tab ${filterHalf===2?'active':''}" onclick="d40Half(2)">💼 PC2 (16–End)</button></div>
+ <div class="d40-kpis"><div class="d40-kpi"><small>Total earned</small><strong>${dhootWorkError?'Unavailable':mny(earned)}</strong></div><div class="d40-kpi"><small>Shift records</small><strong>${p1.count+p2.count}</strong><span class="d40-tiny">${hours.toFixed(2)} paid hours</span></div></div>
+ <section class="d40-card"><div class="d40-head"><div><h2>🎯 MY GOALS</h2><p class="d40-tiny">Set paycheck targets and track your progress this month</p></div><button class="dhoot-btn" type="button" onclick="d40ToggleGoals()">Edit goals</button></div>
+ <form id="d40-goal-editor" class="d40-goal-editor" onsubmit="d40SaveGoals(event)"><label>PC1 goal ($)<input class="input" type="number" name="pc1" min="1" step="0.01" value="${goal1}" required></label><label>PC2 goal ($)<input class="input" type="number" name="pc2" min="1" step="0.01" value="${goal2}" required></label><button class="d40-submit">Save goals</button></form>
+ ${goalBar('🔥 Paycheck 1 Goal',p1.gross,goal1,'#ff8035','1st – 15th of the month')}
+ ${goalBar('💧 Paycheck 2 Goal',p2.gross,goal2,'#19bdc6','16th – end of month')}
+ ${goalBar('🎯 Monthly Total Goal',earned,totalGoal,'#818cf8','Both paychecks combined')}
+ <p class="d40-muted">Goals are saved in this browser. Amounts are earnings estimates before deductions.</p></section>
+ <section class="d40-card"><div class="d40-head"><div><h2>💸 PAYCHECK BREAKDOWN</h2><p class="d40-tiny">Semi-monthly: 1st–15th & 16th–end</p></div><input class="input" type="month" aria-label="Breakdown month" value="${safe(workMonth)}" onchange="d40SetMonth(this.value)" style="max-width:165px"></div>
+ <div class="d40-donut" style="--d40-pct:${share.toFixed(3)}%"><div class="d40-donut-label"><small>TOTAL</small><strong>${mny(earned)}</strong></div></div>
+ <div class="d40-period-break"><div class="d40-pay orange" style="display:block"><small>🔥 Paycheck 1</small><strong style="display:block;margin-top:5px">${mny(p1.gross)}</strong><small>${earned?(p1.gross/earned*100).toFixed(1):'0.0'}% · ${p1.hours.toFixed(2)} h</small></div><div class="d40-pay teal" style="display:block"><small>💧 Paycheck 2</small><strong style="display:block;margin-top:5px">${mny(p2.gross)}</strong><small>${earned?(p2.gross/earned*100).toFixed(1):'0.0'}% · ${p2.hours.toFixed(2)} h</small></div></div>
+ <div class="d40-month-list"><h2 style="font-size:13px;margin-bottom:8px">📅 PAST PAYCHECKS</h2>${allMonths.length?allMonths.map(m=>{const a=period(m,1),b=period(m,2);return `<button class="d40-month-row" style="width:100%;text-align:left" onclick="d40SetMonth('${m}')"><span><b>${safe(monthsLabel(m))}</b><br><small>PC1 ${mny(a.gross)} · PC2 ${mny(b.gross)}</small></span><strong>${mny(a.gross+b.gross)}</strong></button>`}).join(''):'<p class="d40-muted">Previous months appear after shifts are saved.</p>'}</div></section>
+ <section class="d40-card"><div class="d40-head"><h2>New Session Log</h2><span class="d40-tiny">Straight-time only</span></div><form class="d40-form" onsubmit="dhootSaveShift(event)"><label>Shift date<input class="input" type="date" name="date" value="${safe(dhootToday())}" required></label><div class="d40-period-break"><label>Start time<input class="input" type="time" name="start" value="18:00" required></label><label>End time<input class="input" type="time" name="end" value="23:00" required></label></div><label>Unpaid break (minutes)<input class="input" type="number" name="break" min="0" max="1439" value="0" required></label><button class="d40-submit" ${dhootWorkError||dhootWorkBusy?'disabled':''}>Submit Shift</button></form><p class="d40-muted" style="margin-top:9px">Add each session, then edit exact paid hours from the history below.</p></section>
+ <section class="d40-card"><div class="d40-head"><h2>SHIFTS (${entries.length})</h2><span class="d40-tiny">${safe(monthsLabel(workMonth))}${filterHalf?' · PC'+filterHalf:''}</span></div>${entries.length?entries.map(s=>{const b=breakdown.get(s.id)||{h:0,gross:0};return `<div class="d40-history-row"><div><strong>${safe(s.work_date)}</strong> <span class="d40-tiny" style="color:${Number(s.work_date.slice(8))<=15?'#ff8035':'#19bdc6'}">● PC${Number(s.work_date.slice(8))<=15?1:2}</span><p>${safe(String(s.start_time).slice(0,5))} – ${safe(String(s.end_time).slice(0,5))} (${Number(b.h).toFixed(2)} h)</p><strong>${mny(b.gross)}</strong></div><div class="d40-history-controls"><button type="button" onclick="d35EditShift('${safe(s.id)}')">Edit</button><button type="button" onclick="dhootDeleteShift('${safe(s.id)}')" aria-label="Delete shift">×</button></div></div>`}).join(''):'<p class="d40-muted">No shifts for the selected period.</p>'}</section>
+ <details class="d40-card"><summary style="cursor:pointer;font-weight:800">Time clock & hourly rate settings</summary><div style="margin-top:15px"><p class="d40-muted">${active?(onBreak?'On break':'Shift in progress'):'Not clocked in'}</p><div class="d40-actions" style="margin-top:10px"><button class="dhoot-btn primary" onclick="dhootClockAction('in')" ${active||dhootWorkError?'disabled':''}>Clock in</button><button class="dhoot-btn" onclick="dhootClockAction('out')" ${!working||dhootWorkError?'disabled':''}>Clock out</button><button class="dhoot-btn" onclick="dhootClockAction('break_start')" ${!working||dhootWorkError?'disabled':''}>Start break</button><button class="dhoot-btn" onclick="dhootClockAction('break_end')" ${!onBreak||dhootWorkError?'disabled':''}>End break</button></div><h3 style="margin-top:16px">Hourly rate: ${mny(dhootRateAt(dhootToday()))}/hr</h3><form class="d40-form" onsubmit="dhootSaveRate(event)"><label>Hourly rate ($)<input class="input" type="number" name="rate" min="0" max="10000" step="0.01" required></label><label>Effective date<input class="input" type="date" name="date" value="${safe(dhootToday())}" required></label><button class="d40-submit" ${dhootWorkError?'disabled':''}>Save rate</button></form></div></details>
+ </div>`;
+ };
+})();
+</script>
 </body>
 </html>
