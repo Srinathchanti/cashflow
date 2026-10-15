@@ -4039,7 +4039,46 @@ window.d35SetMonth=function(value){if(/^20\d\d-(0[1-9]|1[0-2])$/.test(value)){se
 window.d35CopySQL=async function(){const sql=document.getElementById('dhoot-v35-sql').textContent;const el=document.getElementById('d35-sql-area');if(el){el.style.display='block';el.value=sql;}try{await navigator.clipboard.writeText(sql);alert('Additive upgrade SQL copied. Back up your database, then run it in Supabase SQL Editor.');}catch{if(el){el.focus();el.select();}}};
 window.d35Link=async function(e){e.preventDefault();if(receiptBusy)return;const f=new FormData(e.target),tx=TXS.find(t=>String(t.id)===String(f.get('tx')));if(!tx||tx.type!=='income'||tx.currency!=='USD'||receipts.some(r=>String(r.transaction_id)===String(tx.id)))return alert('Choose an unused USD income transaction.');receiptBusy=true;try{const {error}=await sb.from('dhoot_pay_receipts').insert({user_id:await getUserId(),transaction_id:tx.id,pay_month:selectedMonth,pay_half:Number(f.get('half')),amount:Number(tx.amount)});if(error)throw error;await loadReceipts();renderMain();}catch(err){alert('Unable to link payment: '+err.message)}finally{receiptBusy=false;}};
 window.d35Unlink=async function(id){if(!confirm('Unlink this payment from the pay period? The income transaction will remain unchanged.'))return;const {error}=await sb.from('dhoot_pay_receipts').delete().eq('id',id);if(error)return alert(error.message);await loadReceipts();renderMain();};
-window.d35EditShift=async function(id){const s=dhootWork.find(x=>String(x.id)===String(id));if(!s)return;const date=prompt('Shift date (YYYY-MM-DD)',s.work_date);if(date===null)return;const start=prompt('Clock-in time (HH:MM)',String(s.start_time).slice(0,5));if(start===null)return;const end=prompt('Clock-out time (HH:MM)',String(s.end_time).slice(0,5));if(end===null)return;const breaks=prompt('Unpaid break minutes',String(s.break_minutes));if(breaks===null)return;const h=dhootHours(start,end,Number(breaks));if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||!Number.isInteger(Number(breaks))||Number(breaks)<0||h<=0||h>24)return alert('Invalid shift details.');const {error}=await sb.from('dhoot_work_shifts').update({work_date:date,start_time:start,end_time:end,break_minutes:Number(breaks),paid_hours:Math.round(h*100)/100}).eq('id',id).eq('user_id',await getUserId());if(error)return alert('Could not edit shift. Run the additive v35 SQL and retry. '+error.message);await dhootLoadWork();renderMain();};
+window.d35EditShift=function(id){
+ const s=dhootWork.find(x=>String(x.id)===String(id));if(!s)return;
+ const overlay=document.getElementById('dhoot-edit-overlay');
+ const form=document.getElementById('dhoot-edit-form');
+ form.elements.shiftId.value=String(s.id);
+ form.elements.date.value=s.work_date;
+ form.elements.start.value=String(s.start_time).slice(0,5);
+ form.elements.end.value=String(s.end_time).slice(0,5);
+ form.elements.breaks.value=Number(s.break_minutes)||0;
+ form.elements.hours.value=Number(s.paid_hours).toFixed(2);
+ document.getElementById('dhoot-edit-error').textContent='';
+ overlay.style.display='flex';
+ form.elements.hours.focus();
+};
+window.dhootCloseEdit=function(){document.getElementById('dhoot-edit-overlay').style.display='none';};
+window.dhootRecalculateEditHours=function(){
+ const f=document.getElementById('dhoot-edit-form').elements;
+ const h=dhootHours(f.start.value,f.end.value,Number(f.breaks.value));
+ if(!Number.isFinite(h)||h<=0||h>24)return document.getElementById('dhoot-edit-error').textContent='Check start, end and break before recalculating.';
+ f.hours.value=h.toFixed(2);document.getElementById('dhoot-edit-error').textContent='';
+};
+window.dhootSubmitEdit=async function(event){
+ event.preventDefault();if(dhootWorkBusy)return;
+ const f=event.target.elements;
+ const id=f.shiftId.value,date=f.date.value,start=f.start.value,end=f.end.value;
+ const breaks=Number(f.breaks.value),hours=Number(f.hours.value);
+ const err=document.getElementById('dhoot-edit-error');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||!Number.isInteger(breaks)||breaks<0||breaks>1439||!Number.isFinite(hours)||hours<=0||hours>24||Math.round(hours*100)!==hours*100&&Math.abs(Math.round(hours*100)-hours*100)>1e-7){
+  err.textContent='Enter valid date, times, unpaid break (0–1439 min), and paid hours (0.01–24.00, up to two decimals).';return;
+ }
+ const btn=document.getElementById('dhoot-edit-save');dhootWorkBusy=true;btn.disabled=true;err.textContent='';
+ try{
+  const uid=await getUserId();
+  const {data,error}=await sb.from('dhoot_work_shifts').update({work_date:date,start_time:start,end_time:end,break_minutes:breaks,paid_hours:Math.round(hours*100)/100}).eq('id',id).eq('user_id',uid).select('id');
+  if(error)throw error;
+  if(!data||!data.length)throw new Error('No shift updated. Confirm your Supabase UPDATE policy and permissions.');
+  await dhootLoadWork();dhootCloseEdit();renderMain();
+ }catch(e){err.textContent='Could not save: '+(e.message||String(e))+' If access is denied, run the existing additive v35 update-policy SQL in Supabase.';}
+ finally{dhootWorkBusy=false;btn.disabled=false;}
+};
 const baseDashboard=renderDashboard;
 renderDashboard=function(){let html=baseDashboard();const recordedCashFlow=TXS.filter(t=>t.currency==='USD').reduce((n,t)=>n+(t.type==='income'?1:-1)*Number(t.amount||0),0);const workTotals=dhootWorkError?null:dhootWorkTotals();const hoursPay=workTotals?Number(workTotals.earned||0):null;const combinedTotal=workTotals?(recordedCashFlow+hoursPay):null;const currentMonth=clean(monthStr(new Date()));const head=`<section class="d35-card"><div class="d35-top"><div><p class="label">Dhoot smart overview</p><h2 class="heading-lg" style="margin-top:4px">Your work and money</h2></div><button class="pill active" onclick="switchTab('work')">View pay periods →</button></div><div class="d35-grid"><div class="d35-metric"><small>Recorded cash flow</small><strong>${money(recordedCashFlow)}</strong></div><div class="d35-metric"><small>Pay for hours · ${currentMonth}</small><strong>${workTotals?money(hoursPay):'Unavailable'}</strong></div><div class="d35-metric"><small>Total cash flow + hours pay · ${currentMonth}</small><strong>${workTotals?money(combinedTotal):'Unavailable'}</strong></div></div><p class="d35-muted">Box 1 shows recorded cash flow from transactions. Box 2 shows the pay calculated from recorded work hours and applicable rates. Box 3 is Box 1 + Box 2. No overtime premium is included.</p></section>`;html=html.replace(/<section class="cf2-hero dhoot-unified-hero">[\s\S]*?<div class="cf2-actions">/, '<div class="cf2-actions">');return head+html;};
 const baseWork=dhootWorkView;
@@ -4049,5 +4088,24 @@ renderTools=function(){const html=baseTools();return `<section class="d35-card">
 window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-tools-month')?.value||selectedMonth;if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))return alert('Select a valid month.');if(dhootWorkError||receiptError)return alert('Work or payment data is unavailable; complete setup before exporting.');const rows=[['Pay period','From','Through','Hours worked','Estimated gross USD','Linked received USD','Unpaid estimate USD']];for(let half=1;half<=2;half++){const p=dhootPeriodTotals(month,half),got=receiptPeriod(month,half);rows.push(['PC'+half,p.from,p.to,p.hours.toFixed(2),p.gross.toFixed(2),got.toFixed(2),(p.gross-got).toFixed(2)]);}const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download=`Dhoot-Paycheck-Summary-${month}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);};
 })();
 </script>
+
+<!-- Editable shift record: paid hours can be corrected independently from clock times. -->
+<div id="dhoot-edit-overlay" role="presentation" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.70);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)dhootCloseEdit()">
+ <section class="glass-strong" role="dialog" aria-modal="true" aria-labelledby="dhoot-edit-title" style="width:100%;max-width:470px;border-radius:22px;padding:22px;max-height:90vh;overflow:auto">
+  <div class="dhoot-top"><h2 id="dhoot-edit-title" class="heading-md">Edit work hours</h2><button class="icon-btn" type="button" aria-label="Close edit" onclick="dhootCloseEdit()">✕</button></div>
+  <p class="body-sm" style="margin:10px 0 16px">Update a saved shift, or directly correct paid hours. Your earnings and pay-period totals will refresh after saving.</p>
+  <form id="dhoot-edit-form" onsubmit="dhootSubmitEdit(event)">
+   <input type="hidden" name="shiftId">
+   <div class="dhoot-field"><label for="dhoot-edit-date">Work date</label><input class="input" id="dhoot-edit-date" name="date" type="date" required></div>
+   <div class="grid-2"><div class="dhoot-field"><label for="dhoot-edit-start">Start time</label><input class="input" id="dhoot-edit-start" name="start" type="time" required></div><div class="dhoot-field"><label for="dhoot-edit-end">End time</label><input class="input" id="dhoot-edit-end" name="end" type="time" required></div></div>
+   <div class="dhoot-field"><label for="dhoot-edit-breaks">Unpaid break (minutes)</label><input class="input" id="dhoot-edit-breaks" name="breaks" type="number" min="0" max="1439" step="1" required></div>
+   <div class="dhoot-field"><label for="dhoot-edit-hours">Paid hours (editable)</label><input class="input" id="dhoot-edit-hours" name="hours" type="number" min="0.01" max="24" step="0.01" inputmode="decimal" required></div>
+   <button class="dhoot-btn" style="width:100%;margin-bottom:10px" type="button" onclick="dhootRecalculateEditHours()">Recalculate from times</button>
+   <p class="dhoot-help">Paid hours can be overridden without changing the start/end times. No overtime premium.</p>
+   <p id="dhoot-edit-error" role="alert" style="color:var(--red);font-size:12px;line-height:1.5;margin:9px 0"></p>
+   <div class="grid-2"><button class="dhoot-btn" type="button" onclick="dhootCloseEdit()">Cancel</button><button class="dhoot-btn primary" id="dhoot-edit-save" type="submit">Save changes</button></div>
+  </form>
+ </section>
+</div>
 </body>
 </html>
