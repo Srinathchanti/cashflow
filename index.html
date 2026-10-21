@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CashFlow — Unified Finance & Work</title><meta name="description" content="CashFlow unifies work shifts, earnings, budgets, expenses, client payments, and financial insights in one workspace.">
+<title>CashFlow</title><meta name="description" content="CashFlow unifies work shifts, earnings, budgets, expenses, client payments, and financial insights in one workspace.">
 <style>
 @font-face { font-family: "SF"; src: local("Inter"), local("-apple-system"), local("BlinkMacSystemFont"); }
 :root {
@@ -381,6 +381,69 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
 <style id="dhoot-ai-v44-css">
 .dai-shell{max-width:920px;margin:auto}.dai-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:8px 0 18px}.dai-kicker{color:var(--blue);font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.dai-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.dai-metric{min-width:0;padding:16px;border-radius:18px;border:1px solid var(--border);background:var(--surface-1)}.dai-metric small{display:block;color:var(--text-3);font-size:11px}.dai-metric strong{display:block;font-size:clamp(17px,2.8vw,25px);margin-top:8px;overflow-wrap:anywhere}.dai-panel{background:var(--surface-1);border:1px solid var(--border);border-radius:22px;padding:18px;margin:16px 0}.dai-chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.dai-chip{padding:9px 12px;border:1px solid var(--border);background:var(--surface-2);border-radius:99px;text-align:left;font-size:12px;font-weight:650}.dai-chart-row{display:flex;align-items:center;gap:9px;margin:10px 0;font-size:12px}.dai-chart-label{width:90px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dai-chart-track{height:10px;flex:1;background:var(--surface-2);border-radius:20px;overflow:hidden}.dai-chart-fill{height:100%;background:var(--grad-1);border-radius:20px}.dai-chart-val{min-width:75px;text-align:right;font-weight:750}.dai-answers{max-height:none}.dai-answers .chat-bubble{max-width:min(85%,680px);overflow-wrap:anywhere}.dai-answers .chat-bubble.assistant{line-height:1.65}.dai-muted{font-size:12px;color:var(--text-3);line-height:1.5}.dai-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.dai-actions button{padding:9px 11px;border:1px solid var(--border);background:var(--surface-2);border-radius:12px;font-size:12px}.dai-stat-line{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--border)}.dai-stat-line:last-child{border:0}@media(max-width:540px){.dai-grid{grid-template-columns:1fr 1fr}.dai-metric:last-child{grid-column:span 2}.dai-head{flex-wrap:wrap}.dai-panel{padding:14px}.dai-chart-label{width:75px}.dai-chart-val{min-width:60px}.dai-shell{padding-bottom:30px}}
 </style>
+<style id="cashflow-reimagined-style">
+/* CashFlow — redesigned workspace, October 2026 */
+:root{--surface-0:#f5f7fc;--surface-1:#fff;--surface-2:#fff;--surface-3:#fff;--border:#e6e9f1;--text-1:#182039;--text-2:#535d77;--text-3:#8993a9;--blue:#625de7;--blue-soft:#eeedff;--grad-1:linear-gradient(135deg,#5c58e4,#8376f0);--shadow-md:0 8px 28px rgba(31,43,83,.045)}
+html.dark{--surface-0:#0e1322;--surface-1:#171f32;--surface-2:#1e2840;--surface-3:#202b45;--border:#303c55;--text-1:#f5f7fc;--text-2:#a9b7d1;--text-3:#8796b3;--blue:#a59cff;--blue-soft:#282848;--shadow-md:0 10px 25px rgba(0,0,0,.16)}
+body{background-image:none!important;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important}
+.hdr-wrap{padding:18px 24px 0;position:sticky;top:0;z-index:42}
+.hdr-inner{max-width:1320px;background:var(--surface-1)!important;border:1px solid var(--border)!important;border-radius:20px;padding:12px 20px;box-shadow:var(--shadow-md)!important}
+.brand-icon{border-radius:13px;background:#625de7;width:41px;height:41px}.brand-name{font-size:20px;letter-spacing:-.05em;font-weight:850}
+.icon-btn{border-radius:12px;background:var(--surface-2);min-height:40px;min-width:40px;color:var(--text-2)}
+main{max-width:1240px;margin:auto;padding:38px 28px 155px}
+.card,.card-flat,.cf2-panel,.d40-card,.dai-panel,.dhoot-unified-details{border:1px solid var(--border)!important;border-radius:20px!important;background:var(--surface-1)!important;box-shadow:var(--shadow-md)!important;backdrop-filter:none!important}
+.input{background:var(--surface-2);border-color:var(--border);min-height:42px}
+.btn-primary{background:#625de7;box-shadow:none;border-radius:12px}
+nav.bottom-nav{position:fixed;left:50%;bottom:18px;top:auto;transform:translateX(-50%);width:min(840px,calc(100vw - 30px));z-index:45}
+nav.bottom-nav .nav-inner{background:#181f34!important;border:1px solid #38425d!important;box-shadow:0 18px 55px rgba(7,12,32,.27)!important;border-radius:999px;padding:8px;display:flex;justify-content:space-between;gap:5px}
+.nav-btn{color:#aeb9d6!important;border-radius:999px!important;min-height:46px;display:flex;justify-content:center;flex:1;gap:7px;padding:9px 12px;font-size:12px;font-weight:700}
+.nav-btn span{display:inline!important}.nav-btn svg{width:17px;height:17px}
+.nav-btn.active{background:#6b68e9!important;color:#fff!important;box-shadow:none!important}.nav-btn:hover:not(.active){color:white!important;background:#303a53}
+.cf-new-top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.cf-new-eyebrow{font-size:11px;font-weight:800;letter-spacing:.15em;color:var(--blue);text-transform:uppercase}
+.cf-new-title{font-size:clamp(29px,3.4vw,44px);line-height:1.13;letter-spacing:-.055em;font-weight:850;margin:6px 0}
+.cf-new-muted{color:var(--text-2);font-size:13px;line-height:1.6}
+.cf-new-actions{display:flex;flex-wrap:wrap;gap:9px}
+.cf-new-btn{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:12px;min-height:43px}
+.cf-new-btn svg{width:17px;height:17px}.cf-new-btn.primary{background:#625de7;border-color:#625de7;color:#fff}
+.cf-new-hero{border-radius:24px;background:linear-gradient(115deg,#242d57,#4f4e9d 75%,#7776ca);padding:31px;display:grid;grid-template-columns:1.25fr 1fr;gap:24px;color:#fff;position:relative;overflow:hidden;box-shadow:0 15px 36px rgba(52,56,125,.16);margin:0 0 16px}
+.cf-new-hero:after{position:absolute;content:'';width:300px;height:300px;border:1px solid rgba(255,255,255,.13);border-radius:50%;right:-100px;top:-160px;pointer-events:none}.cf-new-hero>*{position:relative;z-index:1}
+.cf-new-hero small{color:#d3dbf3;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:750}
+.cf-new-amount{font-size:clamp(34px,4.6vw,60px);font-weight:850;letter-spacing:-.05em;margin:12px 0 8px;line-height:1.05}
+.cf-new-hero-note{font-size:12px;color:#d3dbf3;line-height:1.6;max-width:510px}
+.cf-new-hero-right{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:center}
+.cf-new-hero-mini{border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.09);border-radius:14px;padding:14px;min-width:0}
+.cf-new-hero-mini strong{font-size:clamp(18px,2vw,25px);display:block;margin-top:8px;letter-spacing:-.03em;overflow-wrap:anywhere}
+.cf-new-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.cf-new-stat{border:1px solid var(--border);background:var(--surface-1);border-radius:18px;padding:20px;min-width:0}
+.cf-new-stat-label{font-size:12px;color:var(--text-2);display:flex;gap:7px;align-items:center}.cf-new-stat-label svg{width:16px;height:16px;color:var(--blue)}
+.cf-new-stat-value{font-size:clamp(20px,2.1vw,28px);font-weight:820;letter-spacing:-.035em;margin-top:12px;overflow-wrap:anywhere}
+.cf-new-stat-foot{font-size:11px;color:var(--text-3);margin-top:8px}
+.cf-new-lower{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin:16px 0 24px}
+.cf-new-panel{border:1px solid var(--border);border-radius:20px;background:var(--surface-1);padding:21px;min-width:0}
+.cf-new-panel h3{font-size:16px;letter-spacing:-.025em;margin-bottom:15px}
+.cf-new-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--border);font-size:13px}
+.cf-new-row:first-of-type{border-top:0}.cf-new-row small{color:var(--text-3);font-size:11px}
+.cf-new-quick{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cf-new-quick button{text-align:left;display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:13px;padding:12px;font-weight:700;font-size:12px;background:var(--surface-2)}
+.cf-new-quick svg{width:17px;height:17px;color:var(--blue)}
+.cf-new-legacy{margin-top:26px}.cf-new-legacy summary{cursor:pointer;padding:16px 20px;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;font-weight:750;font-size:13px;list-style:revert}.cf-new-legacy[open] summary{margin-bottom:18px}
+@media(min-width:1024px){.container{max-width:1080px}.d40-work{max-width:1100px}.dai-shell{max-width:1150px}.dhoot-work-wrap{max-width:1100px;margin:auto}.search-panel{max-width:800px}.chat-bar-wrap{max-width:800px}}
+@media(max-width:780px){main{padding:25px 16px 120px}.cf-new-hero{grid-template-columns:1fr;padding:23px}.cf-new-stats{grid-template-columns:1fr 1fr}.cf-new-lower{grid-template-columns:1fr}.cf-new-hero-right{grid-template-columns:1fr 1fr}.hdr-wrap{padding:10px 10px 0}}
+@media(max-width:639px){nav.bottom-nav{bottom:10px;width:calc(100vw - 20px)}nav.bottom-nav .nav-inner{padding:7px 5px;gap:0}.nav-btn{padding:8px 5px;flex-direction:column;gap:2px;min-width:0;min-height:52px}.nav-btn svg{width:17px;height:17px}.nav-btn span{display:inline!important;font-size:9px}.nav-fab{display:none!important}.cf-new-top{align-items:flex-start}.cf-new-stats{gap:9px}.cf-new-stat{padding:14px}.cf-new-hero-mini{padding:11px}.cf-new-btn{padding:10px 12px}.hdr-inner{padding:9px 12px}.brand-name{font-size:17px}.hdr-actions{gap:4px}.icon-btn{min-height:36px;min-width:36px;width:36px;height:36px}}
+@media(max-width:390px){.nav-btn span{font-size:8px}.cf-new-hero-right{grid-template-columns:1fr 1fr}.cf-new-stats{grid-template-columns:1fr 1fr}}
+</style>
+
+<style id="cashflow-work-clients-refresh">
+.cfpage{display:grid;gap:20px}.cfpage .cf-new-top{margin:0}.cfpage-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cfpage-kpi{padding:19px;border-radius:18px;background:var(--surface-1);border:1px solid var(--border);min-width:0}
+.cfpage-kpi small{font-size:11px;color:var(--text-2);font-weight:650}.cfpage-kpi strong{display:block;margin:12px 0 6px;font-size:clamp(20px,2.4vw,29px);letter-spacing:-.04em;overflow-wrap:anywhere}.cfpage-kpi span{font-size:11px;color:var(--text-3)}
+.cfpage-split{display:grid;grid-template-columns:1.12fr .88fr;gap:15px}.cfpage-panel{border:1px solid var(--border);border-radius:20px;background:var(--surface-1);padding:22px;min-width:0}.cfpage-panel h3{font-size:16px;letter-spacing:-.025em;margin-bottom:8px}.cfpage-caption{font-size:12px;color:var(--text-2);line-height:1.55}.cfpage-table-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}.cfpage-table-row:last-child{border:0}.cfpage-table-row strong{font-size:13px}.cfpage-table-row small{display:block;font-size:11px;color:var(--text-3);margin-top:5px}.cfpage-table-row em{font-style:normal;font-weight:780;font-size:13px;white-space:nowrap}.cfpage-icon{width:38px;height:38px;border-radius:12px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;flex-shrink:0}.cfpage-icon svg{width:17px;height:17px}.cfpage-cta{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0 0}.cfpage-cta button{background:var(--surface-2);border:1px solid var(--border);border-radius:11px;min-height:43px;padding:11px 14px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:760}.cfpage-cta button svg{height:17px;width:17px}.cfpage-cta button.primary{background:#625de7;border-color:#625de7;color:white}
+.cfpage-ledger{border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--surface-1)}.cfpage-ledger>summary{padding:21px 24px;cursor:pointer;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:12px}.cfpage-ledger>summary::after{content:'⌄';font-size:21px;color:var(--text-3)}.cfpage-ledger[open]>summary::after{content:'⌃'}.cfpage-ledger>div{padding:10px 20px 20px;border-top:1px solid var(--border)}.cfpage-ledger .dhoot-work-wrap,.cfpage-ledger .d40-work{max-width:none!important}.cfpage-ledger .dhoot-top,.cfpage-ledger .dai-head{display:none}.cfpage-error{border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:13px;font-size:12px;background:var(--red-soft)}
+.cfpage-workhero{background:linear-gradient(112deg,#283154,#52529f);padding:25px 28px;border-radius:22px;color:white;display:flex;align-items:center;justify-content:space-between;gap:22px}.cfpage-workhero small{font-size:11px;text-transform:uppercase;color:#d4dcfa;font-weight:700;letter-spacing:.09em}.cfpage-workhero strong{font-size:clamp(28px,4vw,44px);font-weight:850;letter-spacing:-.045em;display:block;margin:9px 0}.cfpage-workhero p{font-size:12px;color:#e2e6fa;line-height:1.5;max-width:540px}.cfpage-workhero button{background:white;color:#3f3a91;border-radius:11px;padding:12px 17px;font-weight:800;white-space:nowrap;font-size:12px}
+.cfpage-week{display:flex;align-items:center;gap:8px}.cfpage-week button{border:1px solid var(--border);background:var(--surface-2);width:36px;height:36px;border-radius:10px;display:grid;place-items:center}.cfpage-week button svg{width:16px;height:16px}.cfpage-week span{font-size:12px;font-weight:750;text-align:center}.cfpage-warning{font-size:11px;color:var(--text-3);line-height:1.55;margin-top:10px}
+@media(max-width:900px){.cfpage-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cfpage-split{grid-template-columns:1fr}}@media(max-width:560px){.cfpage-workhero{display:block;padding:22px}.cfpage-workhero button{margin-top:14px}.cfpage-panel{padding:17px}.cfpage-ledger>summary{padding:17px}.cfpage-ledger>div{padding:8px 10px 17px}.cfpage-kpi{padding:15px}.cfpage-cta button{flex:1;justify-content:center}}
+</style>
 </head>
 <body>
 
@@ -423,8 +486,8 @@ html.dark .dhoot-pc-button.pc1{background:#39251f;color:#ffc59b;border-color:#8c
     <button class="pill nav-btn" data-tab="work" onclick="switchTab('work')"><svg data-lucide="clock-3"></svg><span>Work</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
-    <button class="pill nav-btn" data-tab="ask" onclick="switchTab('ask')"><svg data-lucide="message-circle"></svg><span>Ask</span></button>
-    <button class="pill nav-btn" data-tab="people" onclick="switchTab('people')"><svg data-lucide="user-check"></svg><span>People</span></button>
+    <button class="pill nav-btn" data-tab="ask" onclick="switchTab('ask')"><svg data-lucide="message-circle"></svg><span>Insights</span></button>
+    <button class="pill nav-btn" data-tab="people" onclick="switchTab('people')"><svg data-lucide="user-check"></svg><span>Clients</span></button>
     <button class="nav-fab" onclick="openModal()"><svg data-lucide="plus" style="width:16px;height:16px"></svg></button>
   </div>
 </nav>
@@ -4300,6 +4363,89 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  renderAsk=function(){const m=getMonth(),t=totals(m),questions=['How much did I earn this month?','Compare PC1 and PC2','Where am I spending the most?','Generate my monthly financial report','Show my earnings trend','How many hours did I work?'];const inner=`<div class="dai-shell"><div class="dai-head"><div><div class="dai-kicker">✦ CashFlow AI Insights 2.0</div><h1 class="heading-lg" style="margin:7px 0">Your finance & earnings assistant</h1><p class="dai-muted">Private rule-based answers using your loaded records. No external AI service; data still syncs through Supabase.</p></div><div class="dai-actions"><button onclick="daiExportChat()" title="Download chat history">${icon('download')} Export chat</button><button onclick="clearChat()" title="Clear history">${icon('rotate-ccw')} Clear</button></div></div><section class="dai-panel"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><strong>Monthly financial snapshot</strong><input class="input" type="month" value="${safe(m)}" aria-label="Ask insights month" onchange="daiSetMonth(this.value)" style="width:170px"></div><div class="dai-grid" style="margin-top:15px"><div class="dai-metric"><small>Recorded cash flow</small><strong>${usd(t.cash)}</strong></div><div class="dai-metric"><small>Hours pay (estimate)</small><strong>${t.work?usd(t.work.earned):'Unavailable'}</strong></div><div class="dai-metric"><small>Combined display total</small><strong>${t.work?usd(t.cash+t.work.earned):'Unavailable'}</strong></div></div><p class="dai-muted" style="margin-top:12px">Cash flow + hours pay can include the same wages twice if paycheck income has already been recorded in Transactions.</p></section><section class="dai-panel"><strong>Try asking</strong><div class="dai-chiprow">${questions.map((q,i)=>`<button class="dai-chip" onclick="daiAskQuick(${i})">${safe(q)}</button>`).join('')}</div></section><div class="chat-messages dai-answers" id="chat-messages" aria-live="polite">${CHAT_MSGS.map(chatBubbleHtml).join('')}</div><div style="height:175px"></div></div>`;return inner;};
  window.daiAskQuick=function(i){const questions=['How much did I earn this month?','Compare PC1 and PC2','Where am I spending the most?','Generate my monthly financial report','Show my earnings trend','How many hours did I work?'];if(Number.isInteger(i)&&questions[i])askSuggested(questions[i]);};
  buildChatSuggestions=function(){const el=document.getElementById('chat-suggest');if(el)el.innerHTML='';};
+})();
+</script>
+<script id="cashflow-reimagined-dashboard">
+/* CashFlow new overview — wraps the original functionality instead of removing it. */
+(function(){
+  const existingDashboard=renderDashboard;
+  function safeText(v){return esc(String(v==null?'':v));}
+  function money(v){return fmt(Number(v)||0,'USD');}
+  function sum(rows,key){return rows.reduce((a,x)=>a+(Number(x[key])||0),0);}
+  renderDashboard=function(){
+    const month=monthStr(new Date());
+    const thisMonth=TXS.filter(t=>t.currency==='USD'&&String(t.date).slice(0,7)===month);
+    const received=sum(thisMonth.filter(t=>t.type==='income'),'amount');
+    const spent=sum(thisMonth.filter(t=>t.type==='expense'),'amount');
+    const payments=TXS.filter(t=>t.type==='income'&&t.currency==='USD'&&t.category==='people_payment'&&t.personId);
+    const earnedClient=sum(CLIENT_WORK,'amount');
+    const paidClient=sum(payments,'amount');
+    const outstanding=earnedClient-paidClient;
+    let workError=(typeof dhootWorkError!=='undefined'&&dhootWorkError);
+    let work=null;
+    if(!workError){try{work=dhootWorkTotals(month)}catch(err){workError=true;}}
+    const recent=TXS.filter(t=>t.currency==='USD').slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+    let displayName='';
+    try{if(typeof USER!=='undefined'&&USER){displayName=String(USER.user_metadata?.full_name||USER.user_metadata?.name||'').trim().split(' ')[0]||'';}}catch(_e){}
+    const first=displayName?' '+safeText(displayName):'';
+    const hour=new Date().getHours();
+    const greeting=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+    const wholeClientData=!!clientLedgerError;
+    const detail=existingDashboard();
+    return `<div class="cf-new-home">
+      <div class="cf-new-top"><div><div class="cf-new-eyebrow">Your financial workspace</div><h1 class="cf-new-title">${greeting}${first}</h1><p class="cf-new-muted">A clearer picture of what you've earned, received, spent and are still owed.</p></div><div class="cf-new-actions"><button class="cf-new-btn" onclick="switchTab('work')">${icon('clock-3')} Log work</button><button class="cf-new-btn primary" onclick="openModal()">${icon('plus')} Add transaction</button></div></div>
+      <section class="cf-new-hero"><div><small>Net recorded cash flow · ${safeText(month)}</small><div class="cf-new-amount">${money(received-spent)}</div><p class="cf-new-hero-note">Income received minus expenses recorded this month. Not your verified bank balance; unpaid work and client earnings are excluded.</p></div><div class="cf-new-hero-right"><div class="cf-new-hero-mini"><small>Money received</small><strong>${money(received)}</strong></div><div class="cf-new-hero-mini"><small>Money spent</small><strong>${money(spent)}</strong></div><div class="cf-new-hero-mini"><small>Work pay estimated</small><strong>${workError?'Unavailable':money(work?.earned||0)}</strong></div><div class="cf-new-hero-mini"><small>Client receivables</small><strong>${wholeClientData?'Unavailable':money(outstanding)}</strong></div></div></section>
+      <div class="cf-new-stats"><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('clock')} Hours this month</div><div class="cf-new-stat-value">${workError?'—':(Number(work?.hours||0)).toFixed(2)+' h'}</div><div class="cf-new-stat-foot">Recorded work hours</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('briefcase')} Work earnings</div><div class="cf-new-stat-value">${workError?'—':money(work?.earned||0)}</div><div class="cf-new-stat-foot">Estimated gross pay, no overtime</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('users')} Client work billed</div><div class="cf-new-stat-value">${wholeClientData?'—':money(earnedClient)}</div><div class="cf-new-stat-foot">All-time manually recorded earnings</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('wallet')} Client payments</div><div class="cf-new-stat-value">${money(paidClient)}</div><div class="cf-new-stat-foot">All-time actual receipts</div></div></div>
+      <div class="cf-new-lower"><section class="cf-new-panel"><h3>Recent transactions</h3>${recent.length?recent.map(t=>`<div class="cf-new-row"><div><strong>${safeText(t.description||getCat(t.category,t.type).label)}</strong><div><small>${safeText(String(t.date).slice(0,10))} · ${safeText(t.type)}</small></div></div><strong style="color:${t.type==='income'?'var(--green)':'var(--text-1)'}">${t.type==='income'?'+':'−'}${money(t.amount)}</strong></div>`).join(''):'<p class="cf-new-muted">No transactions yet. Record an income or expense to begin.</p>'}</section><section class="cf-new-panel"><h3>Quick actions</h3><div class="cf-new-quick"><button onclick="switchTab('work')">${icon('calendar-plus')} Work shifts</button><button onclick="switchTab('people')">${icon('users')} Clients</button><button onclick="switchTab('calendar')">${icon('calendar-days')} Calendar</button><button onclick="switchTab('tools')">${icon('download')} Reports</button><button onclick="switchTab('ask')">${icon('sparkles')} Insights</button><button onclick="openModal()">${icon('plus-circle')} Transaction</button></div><p class="cf-new-muted" style="margin-top:18px">Work earnings are estimates. Client work becomes received income only after a client payment is recorded.</p></section></div>
+      <details class="cf-new-legacy"><summary>Open full financial dashboard, budgets, bills & planning</summary><div>${detail}</div></details>
+    </div>`;
+  };
+})();
+</script>
+
+<script id="cashflow-work-clients-views">
+/* Presentation-only wrappers: the original save handlers, tables and calculations are preserved. */
+(function(){
+ const oldWork=dhootWorkView;
+ const oldClients=renderPeople;
+ const money=n=>fmt(Number(n)||0,'USD');
+ const sum=(arr,key)=>arr.reduce((a,v)=>a+(Number(v[key])||0),0);
+ const safe=v=>esc(String(v==null?'':v));
+ function scrollToLedger(id){const d=document.getElementById(id);if(d){d.open=true;requestAnimationFrame(()=>d.scrollIntoView({behavior:'smooth',block:'start'}));}}
+ window.cfGoLedger=scrollToLedger;
+ dhootWorkView=function(){
+  const legacy=oldWork();
+  let totals={earned:0,hours:0,count:0},ready=!dhootWorkError;
+  try{totals=dhootWorkTotals()}catch(e){ready=false;}
+  const month=monthStr(new Date());
+  const logged=(typeof dhootWork!=='undefined'?dhootWork:[]).slice().sort((a,b)=>String(b.work_date).localeCompare(String(a.work_date))).slice(0,5);
+  const current=(typeof dhootClock!=='undefined'&&dhootClock)?dhootClock:null;
+  const rate=typeof dhootRateAt==='function'?dhootRateAt(dayStr()):0;
+  return `<div class="cfpage">
+   <div class="cf-new-top"><div><div class="cf-new-eyebrow">Work / Earnings</div><h1 class="cf-new-title">Your work, clearly.</h1><p class="cf-new-muted">Log your shifts, review earnings and manage both monthly pay periods.</p></div><div class="cf-new-actions"><button class="cf-new-btn primary" onclick="cfGoLedger('cf-work-ledger')">${icon('plus')} Record shift</button></div></div>
+   ${!ready?`<div class="cfpage-error">Work records may be unavailable. Open the detailed workspace below to view the database setup or error.</div>`:''}
+   <div class="cfpage-workhero"><div><small>Estimated gross earnings · ${safe(month)}</small><strong>${ready?money(totals.earned):'Unavailable'}</strong><p>Estimated from recorded shifts and hourly rates—not money confirmed in your bank. No overtime is applied.</p></div><button onclick="cfGoLedger('cf-work-ledger')">Open work tools →</button></div>
+   <div class="cfpage-kpis"><div class="cfpage-kpi"><small>Paid hours this month</small><strong>${ready?Number(totals.hours||0).toFixed(2)+' h':'—'}</strong><span>Recorded shift duration</span></div><div class="cfpage-kpi"><small>Shifts logged</small><strong>${ready?Number(totals.count||0):'—'}</strong><span>This month's shifts</span></div><div class="cfpage-kpi"><small>Current hourly rate</small><strong>${money(rate)}</strong><span>Before taxes</span></div><div class="cfpage-kpi"><small>Time clock</small><strong>${current?current.status==='break'?'On break':'Active':'Off duty'}</strong><span>Current clock status</span></div></div>
+   <div class="cfpage-split"><section class="cfpage-panel"><h3>Recent shifts</h3><p class="cfpage-caption">Your most recently recorded shifts, across all months.</p>${logged.length?logged.map(x=>`<div class="cfpage-table-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="cfpage-icon">${icon('calendar-check')}</div><div><strong>${safe(x.work_date)}</strong><small>${safe(String(x.start_time||'').slice(0,5))} – ${safe(String(x.end_time||'').slice(0,5))}</small></div></div><em>${Number(x.paid_hours||0).toFixed(2)} h</em></div>`).join(''):'<p class="cfpage-caption" style="margin-top:18px">No shifts recorded yet. Open work tools to add your first shift.</p>'}</section><section class="cfpage-panel"><h3>Work tools</h3><p class="cfpage-caption">All existing work records, pay-period forecasts and tools are kept in the detailed workspace.</p><div class="cfpage-cta"><button class="primary" onclick="cfGoLedger('cf-work-ledger')">${icon('clock-3')} Time clock & shifts</button><button onclick="cfGoLedger('cf-work-ledger')">${icon('wallet')} PC1 / PC2</button><button onclick="switchTab('tools')">${icon('download')} Exports</button></div><p class="cfpage-warning">Hourly pay and paycheck values are estimates until reconciled with actual payments.</p></section></div>
+   <details class="cfpage-ledger" id="cf-work-ledger"><summary>Full work workspace — shifts, paychecks, clock and settings</summary><div>${legacy}</div></details>
+  </div>`;
+ };
+ renderPeople=function(){
+  const legacy=oldClients();
+  const from=cwMonday(clientWeekOffset),to=cwSunday(clientWeekOffset);
+  const work=CLIENT_WORK.filter(w=>w.work_date>=from&&w.work_date<=to);
+  const paid=TXS.filter(t=>t.personId&&t.type==='income'&&t.category==='people_payment'&&t.currency==='USD'&&String(t.date).slice(0,10)>=from&&String(t.date).slice(0,10)<=to);
+  const receivedAll=TXS.filter(t=>t.personId&&t.type==='income'&&t.category==='people_payment'&&t.currency==='USD');
+  const earnedAll=sum(CLIENT_WORK,'amount'),received=sum(receivedAll,'amount');
+  const top=PEOPLE.map(p=>({p,earned:sum(CLIENT_WORK.filter(w=>String(w.person_id)===String(p.id)),'amount'),paid:sum(receivedAll.filter(t=>String(t.personId)===String(p.id)),'amount')})).sort((a,b)=>(b.earned-b.paid)-(a.earned-a.paid)).slice(0,5);
+  return `<div class="cfpage">
+   <div class="cf-new-top"><div><div class="cf-new-eyebrow">Clients / Payments</div><h1 class="cf-new-title">Every dollar accounted for.</h1><p class="cf-new-muted">Log what clients owe each day and separately record the payments they actually send.</p></div><div class="cf-new-actions"><button class="cf-new-btn" onclick="openPersonForm()">${icon('user-plus')} New client</button><button class="cf-new-btn primary" onclick="cfGoLedger('cf-client-ledger')">${icon('plus')} Record earnings</button></div></div>
+   ${clientLedgerError?`<div class="cfpage-error">Client work records are unavailable. Open the detailed tracker below for database setup instructions.</div>`:''}
+   <div class="cfpage-kpis"><div class="cfpage-kpi"><small>Earned this week</small><strong>${clientLedgerError?'—':money(sum(work,'amount'))}</strong><span>Daily work ledger</span></div><div class="cfpage-kpi"><small>Received this week</small><strong>${money(sum(paid,'amount'))}</strong><span>Recorded payments</span></div><div class="cfpage-kpi"><small>Outstanding · all time</small><strong>${clientLedgerError?'—':money(Math.max(0,earnedAll-received))}</strong><span>Earned minus received</span></div><div class="cfpage-kpi"><small>Active clients</small><strong>${PEOPLE.filter(p=>p.active).length}</strong><span>Saved client profiles</span></div></div>
+   <div class="cfpage-split"><section class="cfpage-panel"><div class="cf-new-top" style="margin-bottom:8px"><div><h3>Client balances</h3><p class="cfpage-caption">All-time earnings minus received payments.</p></div></div>${top.length?top.map(x=>`<div class="cfpage-table-row"><div style="min-width:0"><strong>${safe(x.p.name)}</strong><small>Earned ${money(x.earned)} · Paid ${money(x.paid)}</small></div><em style="color:${x.earned-x.paid>0?'var(--amber)':'var(--green)'}">${x.earned-x.paid<0?'Credit ':'Owed '}${money(Math.abs(x.earned-x.paid))}</em></div>`).join(''):'<p class="cfpage-caption" style="margin-top:18px">Add a client to start tracking daily earnings.</p>'}</section><section class="cfpage-panel"><h3>Weekly overview</h3><div class="cfpage-week"><button aria-label="Previous week" onclick="changeClientWeek(-1)" >${icon('chevron-left')}</button><span>${safe(cwDate(from))} – ${safe(cwDate(to))}</span><button aria-label="Next week" onclick="changeClientWeek(1)">${icon('chevron-right')}</button></div><div class="cfpage-table-row"><div><strong>Daily work logged</strong><small>${work.length} entries</small></div><em>${clientLedgerError?'—':money(sum(work,'amount'))}</em></div><div class="cfpage-table-row"><div><strong>Payments received</strong><small>${paid.length} transactions</small></div><em>${money(sum(paid,'amount'))}</em></div><p class="cfpage-warning">Payments can settle work from previous weeks. Weekly earned minus weekly paid is not necessarily this week's balance.</p><div class="cfpage-cta"><button class="primary" onclick="cfGoLedger('cf-client-ledger')">${icon('notebook-pen')} Work & payments</button><button onclick="openPersonForm()">${icon('user-plus')} Add client</button></div></section></div>
+   <details class="cfpage-ledger" id="cf-client-ledger"><summary>Full client tracker — daily entries, payments, statements and history</summary><div>${legacy}</div></details>
+  </div>`;
+ };
 })();
 </script>
 </body>
