@@ -444,6 +444,68 @@ nav.bottom-nav .nav-inner{background:#181f34!important;border:1px solid #38425d!
 .cfpage-week{display:flex;align-items:center;gap:8px}.cfpage-week button{border:1px solid var(--border);background:var(--surface-2);width:36px;height:36px;border-radius:10px;display:grid;place-items:center}.cfpage-week button svg{width:16px;height:16px}.cfpage-week span{font-size:12px;font-weight:750;text-align:center}.cfpage-warning{font-size:11px;color:var(--text-3);line-height:1.55;margin-top:10px}
 @media(max-width:900px){.cfpage-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cfpage-split{grid-template-columns:1fr}}@media(max-width:560px){.cfpage-workhero{display:block;padding:22px}.cfpage-workhero button{margin-top:14px}.cfpage-panel{padding:17px}.cfpage-ledger>summary{padding:17px}.cfpage-ledger>div{padding:8px 10px 17px}.cfpage-kpi{padding:15px}.cfpage-cta button{flex:1;justify-content:center}}
 </style>
+<style id="cashflow-daily-earnings-style">
+.cf-daily-panel{margin:18px 0 22px!important;padding:24px!important}
+.cf-daily-top{align-items:center;margin-bottom:18px!important}
+.cf-daily-top h2{font-size:21px;margin:5px 0}
+.cf-daily-top label{min-width:170px}
+.cf-daily-top .input{margin-top:5px}
+.cf-daily-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 20px}
+.cf-daily-summary>div{padding:17px;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}
+.cf-daily-summary small{display:block;color:var(--text-3);font-size:12px}
+.cf-daily-summary strong{display:block;font-size:23px;margin-top:10px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.cf-daily-summary>div:first-child strong{color:var(--green)}
+.cf-daily-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cf-daily-filter button{border:1px solid var(--border);border-radius:999px;background:var(--surface-2);padding:9px 16px;font-weight:700;font-size:12px;color:var(--text-2)}
+.cf-daily-filter button.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cf-daily-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:14px 2px}
+.cf-daily-date{display:flex;flex-direction:column;gap:4px}
+.cf-daily-date b{font-size:14px}.cf-daily-date small{font-size:12px;color:var(--text-3)}
+.cf-daily-row>strong{font-size:16px;font-variant-numeric:tabular-nums;color:var(--green);text-align:right}
+@media(max-width:640px){.cf-daily-panel{padding:17px!important}.cf-daily-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-daily-summary>div:first-child{grid-column:span 2}.cf-daily-summary strong{font-size:20px}.cf-daily-top label{width:100%}}
+</style>
+
+<style id="cf-polish-reliability-style">
+:root{--cf-accent:#6864e8}
+html{scroll-padding-top:102px}body{min-width:320px}
+.hdr-inner,.cf-new-panel,.cfpage-panel,.cfpage-kpi,.cf-new-stat{box-shadow:0 3px 16px rgba(29,36,72,.035)}
+.cf-new-panel,.cfpage-panel,.cfpage-kpi,.cf-new-stat,.cf-new-hero,.cfpage-workhero{transition:box-shadow .18s ease,border-color .18s ease}
+.cf-new-panel:hover,.cfpage-panel:hover{border-color:rgba(117,117,201,.28)}
+.cf-new-btn,.cfpage-cta button,.cf-new-quick button,.dhoot-btn,.btn-primary{min-height:44px}
+.cf-new-quick button:hover,.cf-new-btn:hover,.cfpage-cta button:hover{box-shadow:0 5px 18px rgba(88,87,177,.1)}
+.cfpage-table-row,.cf-new-row{min-width:0}.cfpage-table-row>div,.cf-new-row>div{min-width:0;overflow-wrap:anywhere}
+.cfpage-table-row em,.cf-new-row>strong{flex-shrink:0;font-variant-numeric:tabular-nums;text-align:right}
+.cf-daily-row strong,.cf-new-stat-value,.cfpage-kpi strong{font-variant-numeric:tabular-nums}
+.cf-new-legacy summary,.cfpage-ledger summary{scroll-margin-top:120px}
+.cf-toast{position:fixed;z-index:130;top:90px;left:50%;transform:translate(-50%,-12px);max-width:min(430px,calc(100% - 24px));padding:12px 18px;border:1px solid rgba(129,140,248,.4);border-radius:14px;background:var(--surface-3);color:var(--text-1);box-shadow:0 18px 46px rgba(0,0,0,.2);font-size:13px;line-height:1.5;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.cf-toast.show{opacity:1;transform:translate(-50%,0)}
+.cf-toast.error{border-color:var(--red);color:var(--red)}
+button:disabled{cursor:not-allowed;opacity:.57}
+@media(min-width:781px){main{max-width:1180px!important} .hdr-inner{max-width:1180px!important}}
+@media(max-width:780px){main{width:100%;min-width:0} .cfpage,.cf-new-home{min-width:0} .cf-new-hero-mini strong{overflow-wrap:anywhere}}
+@media(max-width:540px){
+ body{background-attachment:scroll} main{padding:18px 12px calc(118px + env(safe-area-inset-bottom))!important}
+ .hdr-wrap{padding:8px 8px 0!important}.hdr-inner{border-radius:16px!important;padding:10px 11px!important}
+ .brand-icon{width:33px;height:33px}.hdr-actions{gap:3px!important}.hdr-actions .icon-btn{width:33px;height:33px;min-width:33px}
+ .cf-new-title{font-size:clamp(27px,8vw,36px)}.cf-new-hero{padding:22px 17px;border-radius:20px}
+ .cf-new-hero-right{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-new-hero-mini{padding:10px}
+ .cf-new-hero-mini strong{font-size:16px}.cf-new-stats,.cfpage-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
+ .cf-new-stat,.cfpage-kpi{padding:13px!important;border-radius:15px}.cf-new-stat-value{font-size:18px}
+ .cf-new-lower,.cfpage-split{grid-template-columns:minmax(0,1fr)!important}
+ .cf-new-panel,.cfpage-panel{padding:16px!important;border-radius:17px}
+ .cfpage-table-row{gap:8px;flex-wrap:wrap}.cfpage-table-row em{max-width:100%;margin-left:auto}
+ .cf-new-actions{width:100%}.cf-new-actions button{flex:1;justify-content:center}
+ .cf-daily-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .cf-daily-summary>div:last-child{grid-column:1/-1}
+ nav.bottom-nav{bottom:max(8px,env(safe-area-inset-bottom))!important;width:calc(100vw - 12px)!important}
+ nav.bottom-nav .nav-inner{border-radius:18px!important;justify-content:space-around!important;padding:5px 3px!important}
+ .nav-btn{flex:1 1 0!important;min-width:0!important;max-width:none!important;padding:8px 1px!important;gap:4px!important}
+ .nav-btn span{white-space:nowrap;font-size:9px!important}
+ .modal-inner{max-height:85dvh}
+}
+@media(max-width:375px){.hdr-actions .icon-btn:nth-child(2){display:none}.cf-new-hero-right{gap:6px}.cf-new-hero-mini strong{font-size:14px}.cf-new-quick{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.cf-toast,.cf-new-panel,.cfpage-panel{transition:none!important}}
+</style>
 </head>
 <body>
 
@@ -480,7 +542,7 @@ nav.bottom-nav .nav-inner{background:#181f34!important;border:1px solid #38425d!
   </div>
 </div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" aria-label="Primary navigation">
   <div class="nav-inner glass-strong">
     <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
     <button class="pill nav-btn" data-tab="work" onclick="switchTab('work')"><svg data-lucide="clock-3"></svg><span>Work</span></button>
@@ -500,7 +562,8 @@ nav.bottom-nav .nav-inner{background:#181f34!important;border:1px solid #38425d!
   </div>
 </div>
 
-<main id="main-content"></main>
+<main id="main-content" tabindex="-1"></main>
+<div id="cf-toast" class="cf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Add Transaction Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
@@ -736,6 +799,8 @@ async function loadAllFromSupabase() {
   [txRes, budRes, goalRes, billRes, recRes, friendRes, splitRes, partRes, peopleRes].forEach((r,i) => {
     if(r.error){console.error('Supabase load error:',tableNames[i],r.error);cf21LoadWarnings.push(tableNames[i]+': '+r.error.message);}
   });
+  // Do not silently replace financial totals with zero when the core ledger fails.
+  if(txRes.error) throw new Error('Unable to load transactions: '+txRes.error.message);
   TXS = (txRes.data||[]).map(mapTx);
   BUDGETS = (budRes.data||[]).map(mapBudget);
   GOALS = (goalRes.data||[]).map(mapGoal);
@@ -3668,7 +3733,9 @@ async function handleSignOut() { await sb.auth.signOut(); }
 function showAuthScreen() { document.getElementById("auth-screen").style.display = "flex"; }
 function hideAuthScreen() { document.getElementById("auth-screen").style.display = "none"; }
 
+let cfBootSerial=0;
 async function bootApp() {
+  const cfBootId=++cfBootSerial;
   document.getElementById("main-content").innerHTML = `
     <div class="skeleton" style="height:120px;margin-bottom:20px"></div>
     <div class="skeleton" style="height:180px;margin-bottom:20px"></div>
@@ -3678,10 +3745,12 @@ async function bootApp() {
     if(!sessionUid)throw new Error('Not authenticated');
     await loadAllFromSupabase();
     await dhootLoadWork();
+    if(cfBootId!==cfBootSerial)return;
     CHAT_MSGS=cf21GetChatHistory() || [{role:'assistant',html:'Ask me about your spending, budgets, and bills. Answers are computed locally from your loaded records.'}];
   } catch (err) {
+    if(cfBootId!==cfBootSerial)return;
     console.error(err);
-    document.getElementById("main-content").innerHTML = `<div class="card empty-state">${icon("cloud-off")}<p class="heading-md" style="margin-bottom:4px">Can't reach the database</p><p class="body-sm">Check your connection and reload.</p></div>`;
+    document.getElementById("main-content").innerHTML = `<div class="card empty-state">${icon("cloud-off")}<p class="heading-md" style="margin-bottom:4px">Can't reach the database</p><p class="body-sm">Your data has not been changed. Check the connection, then retry.</p><button class="btn-primary" style="margin:16px auto;max-width:180px" onclick="bootApp()">Retry loading</button></div>`;
     refreshIcons();
     return;
   }
@@ -3703,6 +3772,7 @@ async function startApp() {
         authMode = "signin"; renderAuthScreen(); showAuthScreen();
       }
     } else if (event === "SIGNED_OUT") {
+      ++cfBootSerial;
       authMode = "signin"; renderAuthScreen(); showAuthScreen();
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
@@ -4261,6 +4331,8 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  'use strict';
  let workMonth = monthStr(new Date());
  let filterHalf=0;
+ // Expose read-only UI selection to the redesigned Work view.
+ window.cfGetWorkSelection=()=>({month:workMonth,half:filterHalf});
  const mny=n=>fmt(Number(n)||0,'USD');
  const safe=v=>esc(String(v??''));
  const monthsLabel=m=>new Date(m+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
@@ -4391,11 +4463,12 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
     const hour=new Date().getHours();
     const greeting=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
     const wholeClientData=!!clientLedgerError;
+    const hasRate=typeof dhootRates!=='undefined'&&dhootRates.length>0;
     const detail=existingDashboard();
     return `<div class="cf-new-home">
-      <div class="cf-new-top"><div><div class="cf-new-eyebrow">Your financial workspace</div><h1 class="cf-new-title">${greeting}${first}</h1><p class="cf-new-muted">A clearer picture of what you've earned, received, spent and are still owed.</p></div><div class="cf-new-actions"><button class="cf-new-btn" onclick="switchTab('work')">${icon('clock-3')} Log work</button><button class="cf-new-btn primary" onclick="openModal()">${icon('plus')} Add transaction</button></div></div>
-      <section class="cf-new-hero"><div><small>Net recorded cash flow · ${safeText(month)}</small><div class="cf-new-amount">${money(received-spent)}</div><p class="cf-new-hero-note">Income received minus expenses recorded this month. Not your verified bank balance; unpaid work and client earnings are excluded.</p></div><div class="cf-new-hero-right"><div class="cf-new-hero-mini"><small>Money received</small><strong>${money(received)}</strong></div><div class="cf-new-hero-mini"><small>Money spent</small><strong>${money(spent)}</strong></div><div class="cf-new-hero-mini"><small>Work pay estimated</small><strong>${workError?'Unavailable':money(work?.earned||0)}</strong></div><div class="cf-new-hero-mini"><small>Client receivables</small><strong>${wholeClientData?'Unavailable':money(outstanding)}</strong></div></div></section>
-      <div class="cf-new-stats"><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('clock')} Hours this month</div><div class="cf-new-stat-value">${workError?'—':(Number(work?.hours||0)).toFixed(2)+' h'}</div><div class="cf-new-stat-foot">Recorded work hours</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('briefcase')} Work earnings</div><div class="cf-new-stat-value">${workError?'—':money(work?.earned||0)}</div><div class="cf-new-stat-foot">Estimated gross pay, no overtime</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('users')} Client work billed</div><div class="cf-new-stat-value">${wholeClientData?'—':money(earnedClient)}</div><div class="cf-new-stat-foot">All-time manually recorded earnings</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('wallet')} Client payments</div><div class="cf-new-stat-value">${money(paidClient)}</div><div class="cf-new-stat-foot">All-time actual receipts</div></div></div>
+      <div class="cf-new-top"><div><div class="cf-new-eyebrow">Your CashFlow overview</div><h1 class="cf-new-title">${greeting}${first}</h1><p class="cf-new-muted">A clearer picture of what you've earned, received, spent and are still owed.</p></div><div class="cf-new-actions"><button class="cf-new-btn" onclick="switchTab('work')">${icon('clock-3')} Log work</button><button class="cf-new-btn primary" onclick="openModal()">${icon('plus')} Add transaction</button></div></div>
+      <section class="cf-new-hero"><div><small>Net recorded cash flow · ${safeText(month)}</small><div class="cf-new-amount">${money(received-spent)}</div><p class="cf-new-hero-note">Income received minus expenses recorded this month. Not your verified bank balance; unpaid work and client earnings are excluded.</p></div><div class="cf-new-hero-right"><div class="cf-new-hero-mini"><small>Money received</small><strong>${money(received)}</strong></div><div class="cf-new-hero-mini"><small>Money spent</small><strong>${money(spent)}</strong></div><div class="cf-new-hero-mini"><small>Work pay estimated</small><strong>${workError?'Unavailable':!hasRate?'Set hourly rate':money(work?.earned||0)}</strong></div><div class="cf-new-hero-mini"><small>Client receivables</small><strong>${wholeClientData?'Unavailable':money(outstanding)}</strong></div></div></section>
+      <div class="cf-new-stats"><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('clock')} Hours this month</div><div class="cf-new-stat-value">${workError?'—':(Number(work?.hours||0)).toFixed(2)+' h'}</div><div class="cf-new-stat-foot">Recorded work hours</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('briefcase')} Work earnings</div><div class="cf-new-stat-value">${workError?'—':!hasRate?'Set rate':money(work?.earned||0)}</div><div class="cf-new-stat-foot">Estimated gross pay, no overtime</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('users')} Client work billed</div><div class="cf-new-stat-value">${wholeClientData?'—':money(earnedClient)}</div><div class="cf-new-stat-foot">All-time manually recorded earnings</div></div><div class="cf-new-stat"><div class="cf-new-stat-label">${icon('wallet')} Client payments</div><div class="cf-new-stat-value">${money(paidClient)}</div><div class="cf-new-stat-foot">All-time actual receipts</div></div></div>
       <div class="cf-new-lower"><section class="cf-new-panel"><h3>Recent transactions</h3>${recent.length?recent.map(t=>`<div class="cf-new-row"><div><strong>${safeText(t.description||getCat(t.category,t.type).label)}</strong><div><small>${safeText(String(t.date).slice(0,10))} · ${safeText(t.type)}</small></div></div><strong style="color:${t.type==='income'?'var(--green)':'var(--text-1)'}">${t.type==='income'?'+':'−'}${money(t.amount)}</strong></div>`).join(''):'<p class="cf-new-muted">No transactions yet. Record an income or expense to begin.</p>'}</section><section class="cf-new-panel"><h3>Quick actions</h3><div class="cf-new-quick"><button onclick="switchTab('work')">${icon('calendar-plus')} Work shifts</button><button onclick="switchTab('people')">${icon('users')} Clients</button><button onclick="switchTab('calendar')">${icon('calendar-days')} Calendar</button><button onclick="switchTab('tools')">${icon('download')} Reports</button><button onclick="switchTab('ask')">${icon('sparkles')} Insights</button><button onclick="openModal()">${icon('plus-circle')} Transaction</button></div><p class="cf-new-muted" style="margin-top:18px">Work earnings are estimates. Client work becomes received income only after a client payment is recorded.</p></section></div>
       <details class="cf-new-legacy"><summary>Open full financial dashboard, budgets, bills & planning</summary><div>${detail}</div></details>
     </div>`;
@@ -4417,16 +4490,50 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
   const legacy=oldWork();
   let totals={earned:0,hours:0,count:0},ready=!dhootWorkError;
   try{totals=dhootWorkTotals()}catch(e){ready=false;}
-  const month=monthStr(new Date());
+  const selection=typeof window.cfGetWorkSelection==='function'?window.cfGetWorkSelection():{month:monthStr(new Date()),half:0};
+  const month=selection.month;
+  const selectedHalf=selection.half;
   const logged=(typeof dhootWork!=='undefined'?dhootWork:[]).slice().sort((a,b)=>String(b.work_date).localeCompare(String(a.work_date))).slice(0,5);
   const current=(typeof dhootClock!=='undefined'&&dhootClock)?dhootClock:null;
   const rate=typeof dhootRateAt==='function'?dhootRateAt(dayStr()):0;
+  // Group actual saved shifts by their recorded work date. Never treat estimated
+  // wages as received bank income, and use the same gross rate logic as payroll.
+  const selectedMonth=month;
+  const breakdown=dhootBreakdown();
+  const dayMap=new Map();
+  for(const shift of dhootWork){
+    const date=String(shift.work_date||'');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date.slice(0,7)!==selectedMonth)continue;
+    if(selectedHalf===1&&Number(date.slice(8))>15)continue;
+    if(selectedHalf===2&&Number(date.slice(8))<16)continue;
+    const detail=breakdown.get(shift.id)||{h:0,gross:0,rate:0};
+    const previous=dayMap.get(date)||{date,hours:0,gross:0,shifts:0};
+    previous.hours+=Number(detail.h)||0;
+    previous.gross+=Number(detail.gross)||0;
+    previous.shifts++;
+    dayMap.set(date,previous);
+  }
+  const days=[...dayMap.values()].sort((a,b)=>b.date.localeCompare(a.date));
+  const todayIncome=days.find(d=>d.date===dayStr())?.gross||0;
+  const periodEarned=days.reduce((acc,d)=>acc+d.gross,0);
+  const hasHourlyRate=(typeof dhootRates!=='undefined'&&dhootRates.length>0);
+  const incomeOrUnknown=n=>hasHourlyRate?money(n):'Set hourly rate';
+  const dailyHTML=`<section class="cfpage-panel cf-daily-panel" id="cf-daily-earnings" aria-label="Daily earnings breakdown">
+   <div class="cf-new-top cf-daily-top"><div><div class="cf-new-eyebrow">Your earnings by day</div><h2>Daily income breakdown</h2><p class="cfpage-caption">Estimated gross earnings from recorded shifts × their applicable hourly rates. Not payments received.</p></div>
+   <label class="cfpage-caption">Choose month<input aria-label="Daily earnings month" class="input" type="month" value="${safe(selectedMonth)}" onchange="d40SetMonth(this.value)"></label></div>
+   <div class="cf-daily-summary"><div><small>Today’s work earnings</small><strong>${ready?incomeOrUnknown(todayIncome):'Unavailable'}</strong></div><div><small>Selected period gross</small><strong>${ready?incomeOrUnknown(periodEarned):'Unavailable'}</strong></div><div><small>Days worked</small><strong>${ready?days.length:'—'}</strong></div></div>
+   <div class="cf-daily-filter" aria-label="Pay period filter"><button class="${!selectedHalf?'selected':''}" onclick="d40Half(0)" type="button">All days</button><button class="${selectedHalf===1?'selected':''}" onclick="d40Half(1)" type="button">PC1 · 1–15</button><button class="${selectedHalf===2?'selected':''}" onclick="d40Half(2)" type="button">PC2 · 16–end</button></div>
+   ${!ready?'<p class="cfpage-warning">Could not load work records. Check the database connection in Full work workspace.</p>':!hasHourlyRate?'<p class="cfpage-warning">Set your hourly rate under Full work workspace → Time clock & hourly rate settings to calculate your daily pay.</p>':''}
+   <div class="cf-daily-rows">${days.length?days.map(d=>`<div class="cf-daily-row"><div class="cf-daily-date"><b>${safe(new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}))}</b><small>${d.shifts} shift${d.shifts!==1?'s':''} · ${d.hours.toFixed(2)} paid hours</small></div><strong>${ready?incomeOrUnknown(d.gross):'—'}</strong></div>`).join(''):'<p class="cfpage-caption" style="padding:18px 0">No saved work shifts for this period. Record a shift to see your daily earnings.</p>'}</div>
+   <p class="cfpage-warning">Daily earnings are before taxes and deductions, with straight-time pay only. Client work entered separately is not included in shift earnings.</p>
+  </section>`;
   return `<div class="cfpage">
    <div class="cf-new-top"><div><div class="cf-new-eyebrow">Work / Earnings</div><h1 class="cf-new-title">Your work, clearly.</h1><p class="cf-new-muted">Log your shifts, review earnings and manage both monthly pay periods.</p></div><div class="cf-new-actions"><button class="cf-new-btn primary" onclick="cfGoLedger('cf-work-ledger')">${icon('plus')} Record shift</button></div></div>
    ${!ready?`<div class="cfpage-error">Work records may be unavailable. Open the detailed workspace below to view the database setup or error.</div>`:''}
-   <div class="cfpage-workhero"><div><small>Estimated gross earnings · ${safe(month)}</small><strong>${ready?money(totals.earned):'Unavailable'}</strong><p>Estimated from recorded shifts and hourly rates—not money confirmed in your bank. No overtime is applied.</p></div><button onclick="cfGoLedger('cf-work-ledger')">Open work tools →</button></div>
-   <div class="cfpage-kpis"><div class="cfpage-kpi"><small>Paid hours this month</small><strong>${ready?Number(totals.hours||0).toFixed(2)+' h':'—'}</strong><span>Recorded shift duration</span></div><div class="cfpage-kpi"><small>Shifts logged</small><strong>${ready?Number(totals.count||0):'—'}</strong><span>This month's shifts</span></div><div class="cfpage-kpi"><small>Current hourly rate</small><strong>${money(rate)}</strong><span>Before taxes</span></div><div class="cfpage-kpi"><small>Time clock</small><strong>${current?current.status==='break'?'On break':'Active':'Off duty'}</strong><span>Current clock status</span></div></div>
-   <div class="cfpage-split"><section class="cfpage-panel"><h3>Recent shifts</h3><p class="cfpage-caption">Your most recently recorded shifts, across all months.</p>${logged.length?logged.map(x=>`<div class="cfpage-table-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="cfpage-icon">${icon('calendar-check')}</div><div><strong>${safe(x.work_date)}</strong><small>${safe(String(x.start_time||'').slice(0,5))} – ${safe(String(x.end_time||'').slice(0,5))}</small></div></div><em>${Number(x.paid_hours||0).toFixed(2)} h</em></div>`).join(''):'<p class="cfpage-caption" style="margin-top:18px">No shifts recorded yet. Open work tools to add your first shift.</p>'}</section><section class="cfpage-panel"><h3>Work tools</h3><p class="cfpage-caption">All existing work records, pay-period forecasts and tools are kept in the detailed workspace.</p><div class="cfpage-cta"><button class="primary" onclick="cfGoLedger('cf-work-ledger')">${icon('clock-3')} Time clock & shifts</button><button onclick="cfGoLedger('cf-work-ledger')">${icon('wallet')} PC1 / PC2</button><button onclick="switchTab('tools')">${icon('download')} Exports</button></div><p class="cfpage-warning">Hourly pay and paycheck values are estimates until reconciled with actual payments.</p></section></div>
+   <div class="cfpage-workhero"><div><small>Estimated gross earnings · ${safe(month)}</small><strong>${ready?(hasHourlyRate?money(totals.earned):'Set hourly rate'):'Unavailable'}</strong><p>Estimated from recorded shifts and hourly rates—not money confirmed in your bank. No overtime is applied.</p></div><button onclick="cfGoLedger('cf-work-ledger')">Open work tools →</button></div>
+   <div class="cfpage-kpis"><div class="cfpage-kpi"><small>Paid hours this month</small><strong>${ready?Number(totals.hours||0).toFixed(2)+' h':'—'}</strong><span>Recorded shift duration</span></div><div class="cfpage-kpi"><small>Shifts logged</small><strong>${ready?Number(totals.count||0):'—'}</strong><span>This month's shifts</span></div><div class="cfpage-kpi"><small>Current hourly rate</small><strong>${hasHourlyRate?money(rate):'Set rate'}</strong><span>Before taxes</span></div><div class="cfpage-kpi"><small>Time clock</small><strong>${current?current.status==='break'?'On break':'Active':'Off duty'}</strong><span>Current clock status</span></div></div>
+   ${dailyHTML}
+   <div class="cfpage-split"><section class="cfpage-panel"><h3>Recent shifts</h3><p class="cfpage-caption">Your most recently recorded shifts, across all months.</p>${logged.length?logged.map(x=>`<div class="cfpage-table-row"><div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="cfpage-icon">${icon('calendar-check')}</div><div><strong>${safe(x.work_date)}</strong><small>${safe(String(x.start_time||'').slice(0,5))} – ${safe(String(x.end_time||'').slice(0,5))}</small></div></div><em>${Number(dhootBreakdown().get(x.id)?.h||0).toFixed(2)} h<br><b style="color:var(--green)">${hasHourlyRate?money(dhootBreakdown().get(x.id)?.gross||0):'Set rate'}</b></em></div>`).join(''):'<p class="cfpage-caption" style="margin-top:18px">No shifts recorded yet. Open work tools to add your first shift.</p>'}</section><section class="cfpage-panel"><h3>Work tools</h3><p class="cfpage-caption">All existing work records, pay-period forecasts and tools are kept in the detailed workspace.</p><div class="cfpage-cta"><button class="primary" onclick="cfGoLedger('cf-work-ledger')">${icon('clock-3')} Time clock & shifts</button><button onclick="cfGoLedger('cf-work-ledger')">${icon('wallet')} PC1 / PC2</button><button onclick="switchTab('tools')">${icon('download')} Exports</button></div><p class="cfpage-warning">Hourly pay and paycheck values are estimates until reconciled with actual payments.</p></section></div>
    <details class="cfpage-ledger" id="cf-work-ledger"><summary>Full work workspace — shifts, paychecks, clock and settings</summary><div>${legacy}</div></details>
   </div>`;
  };
@@ -4445,6 +4552,38 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
    <div class="cfpage-split"><section class="cfpage-panel"><div class="cf-new-top" style="margin-bottom:8px"><div><h3>Client balances</h3><p class="cfpage-caption">All-time earnings minus received payments.</p></div></div>${top.length?top.map(x=>`<div class="cfpage-table-row"><div style="min-width:0"><strong>${safe(x.p.name)}</strong><small>Earned ${money(x.earned)} · Paid ${money(x.paid)}</small></div><em style="color:${x.earned-x.paid>0?'var(--amber)':'var(--green)'}">${x.earned-x.paid<0?'Credit ':'Owed '}${money(Math.abs(x.earned-x.paid))}</em></div>`).join(''):'<p class="cfpage-caption" style="margin-top:18px">Add a client to start tracking daily earnings.</p>'}</section><section class="cfpage-panel"><h3>Weekly overview</h3><div class="cfpage-week"><button aria-label="Previous week" onclick="changeClientWeek(-1)" >${icon('chevron-left')}</button><span>${safe(cwDate(from))} – ${safe(cwDate(to))}</span><button aria-label="Next week" onclick="changeClientWeek(1)">${icon('chevron-right')}</button></div><div class="cfpage-table-row"><div><strong>Daily work logged</strong><small>${work.length} entries</small></div><em>${clientLedgerError?'—':money(sum(work,'amount'))}</em></div><div class="cfpage-table-row"><div><strong>Payments received</strong><small>${paid.length} transactions</small></div><em>${money(sum(paid,'amount'))}</em></div><p class="cfpage-warning">Payments can settle work from previous weeks. Weekly earned minus weekly paid is not necessarily this week's balance.</p><div class="cfpage-cta"><button class="primary" onclick="cfGoLedger('cf-client-ledger')">${icon('notebook-pen')} Work & payments</button><button onclick="openPersonForm()">${icon('user-plus')} Add client</button></div></section></div>
    <details class="cfpage-ledger" id="cf-client-ledger"><summary>Full client tracker — daily entries, payments, statements and history</summary><div>${legacy}</div></details>
   </div>`;
+ };
+})();
+</script>
+
+<script id="cf-reliability-helpers">
+(function(){
+ let toastTimer;
+ window.cfNotify=function(message,isError=false){
+  const box=document.getElementById('cf-toast');if(!box)return;
+  box.textContent=message;box.classList.toggle('error',!!isError);box.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>box.classList.remove('show'),4200);
+ };
+ // Keep users informed about loss/restoration of connection. No offline save is implied.
+ window.addEventListener('offline',()=>cfNotify('You are offline. New entries cannot sync until connection returns.',true));
+ window.addEventListener('online',()=>cfNotify('Connection restored. You can save new entries.'));
+ const wrapSave=(name,msg)=>{
+  const original=window[name];if(typeof original!=='function')return;
+  window[name]=async function(...args){
+   const result=await original.apply(this,args);
+   // Success is only assumed for explicit, returned Supabase records.
+   if(result && !result.error)cfNotify(msg);
+   return result;
+  };
+ };
+ wrapSave('addTransaction','Transaction saved to CashFlow.');
+ wrapSave('cf2UpdateTransaction','Transaction changes saved.');
+ const originalSwitch=window.switchTab;
+ if(typeof originalSwitch==='function')window.switchTab=function(tab){
+  const result=originalSwitch.apply(this,arguments);
+  const main=document.getElementById('main-content');
+  if(main){main.setAttribute('aria-label',(document.querySelector('.nav-btn.active span')?.textContent||'CashFlow')+' page');}
+  return result;
  };
 })();
 </script>
