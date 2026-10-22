@@ -506,6 +506,31 @@ button:disabled{cursor:not-allowed;opacity:.57}
 @media(max-width:375px){.hdr-actions .icon-btn:nth-child(2){display:none}.cf-new-hero-right{gap:6px}.cf-new-hero-mini strong{font-size:14px}.cf-new-quick{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){.cf-toast,.cf-new-panel,.cfpage-panel{transition:none!important}}
 </style>
+<style id="cf-personal-css">
+/* CashFlow personalized workspace */
+.cf-onboard-layer{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(7,12,27,.74);backdrop-filter:blur(10px)}
+.cf-onboard-layer.open{display:flex}.cf-onboard-dialog{width:min(690px,100%);max-height:min(92dvh,850px);overflow:auto;border:1px solid var(--border);border-radius:28px;background:var(--surface-3);box-shadow:0 32px 100px #0005;padding:clamp(20px,4vw,36px)}
+.cf-onboard-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.cf-onboard-kicker{font-size:11px;font-weight:800;letter-spacing:.15em;color:var(--blue);text-transform:uppercase}.cf-onboard-title{font-size:clamp(24px,4vw,34px);font-weight:850;letter-spacing:-.04em;margin:10px 0}.cf-onboard-desc{font-size:13px;line-height:1.6;color:var(--text-2);margin-bottom:22px}
+.cf-profile-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.cf-profile-choice{display:flex;text-align:left;align-items:center;gap:9px;padding:13px;border:1.5px solid var(--border);border-radius:14px;background:var(--surface-1);font-size:13px;font-weight:700;min-height:52px}.cf-profile-choice.selected{border-color:var(--blue);background:var(--blue-soft)}.cf-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.cf-feature-choice{display:flex;gap:10px;align-items:center;text-align:left;padding:13px;border:1px solid var(--border);border-radius:14px;background:var(--surface-1);font-size:12px;cursor:pointer;min-height:54px}.cf-feature-choice.selected{border-color:var(--blue);background:var(--blue-soft)}.cf-feature-choice input{accent-color:var(--blue);width:16px;height:16px;flex:none}.cf-onboard-step{font-size:12px;font-weight:750;margin:18px 0 9px}.cf-onboard-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:23px}.cf-onboard-foot .btn-primary{width:auto;padding:13px 25px}.cf-onboard-note{color:var(--text-3);font-size:11px;line-height:1.5;max-width:300px}
+.cf-personal-panel{border:1px solid var(--border);background:var(--surface-1);border-radius:22px;padding:18px;margin:0 0 18px}.cf-personal-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}.cf-personal-head h3{font-size:18px;margin:4px 0}.cf-personal-head p{color:var(--text-3);font-size:12px;line-height:1.5}.cf-personal-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.cf-personal-link{padding:13px 10px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:88px;font-size:12px;font-weight:750}.cf-personal-link:hover{border-color:var(--blue)}.cf-personal-link svg{width:18px;height:18px;color:var(--blue)}.cf-personal-personalize{border:1px solid var(--border);padding:8px 11px;border-radius:10px;font-size:11px;font-weight:750;color:var(--text-2)}
+@media(max-width:600px){.cf-profile-options,.cf-feature-grid{grid-template-columns:1fr}.cf-personal-links{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-onboard-dialog{padding:19px;border-radius:20px}.cf-onboard-foot{align-items:stretch;flex-direction:column}.cf-onboard-foot .btn-primary{width:100%}.cf-onboard-note{max-width:none}.cf-personal-head{flex-wrap:wrap}.cf-personal-panel{padding:14px}.cf-personal-link{min-height:78px}}
+</style>
+<style id="cf-smart-home-css">
+.cf-smart{max-width:1240px;margin:auto}.cf-smart-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}.cf-smart-eyebrow{font-size:11px;letter-spacing:.12em;font-weight:800;color:var(--blue)}.cf-smart-heading h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.04em;margin:7px 0}.cf-smart-heading p,.cf-smart-muted{font-size:12px;color:var(--text-3);line-height:1.6}.cf-smart-softbtn{border:1px solid var(--border);background:var(--surface-2);border-radius:12px;padding:11px 14px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;min-height:44px}.cf-smart-softbtn svg,.cf-smart-section svg{width:17px;height:17px}.cf-smart-primary{background:linear-gradient(120deg,#202b52,#343a80 65%,#6257aa);color:white;border-radius:26px;padding:26px;display:grid;grid-template-columns:1.15fr 1fr;gap:22px;margin-bottom:12px;box-shadow:0 14px 40px rgba(20,24,52,.14)}.cf-smart-label{font-weight:800;letter-spacing:.12em;font-size:11px;color:#c3c9ee}.cf-smart-total{font-size:clamp(33px,5.3vw,57px);font-weight:850;letter-spacing:-.055em;margin:12px 0;overflow-wrap:anywhere}.cf-smart-main p{color:#d1d4f1;font-size:12px;line-height:1.6;max-width:440px}.cf-smart-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:99px;font-size:10px;margin-top:17px}.cf-smart-pill svg{width:13px;height:13px}.cf-smart-calcs{display:grid;align-content:center;gap:10px}.cf-smart-calcs>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.075);font-size:12px}.cf-smart-calcs span{color:#d0d2ee}.cf-smart-calcs strong{white-space:nowrap}.cf-smart-settings{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0 10px}.cf-smart-settings label{font-size:11px;color:var(--text-2);font-weight:700;display:flex;flex-direction:column;gap:6px;flex:1 1 150px}.cf-smart-settings .input{min-height:44px}.cf-smart-currency-note{color:var(--amber);font-size:11px;margin-bottom:12px}.cf-smart-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.cf-smart-card{padding:22px;border:1px solid var(--border);border-radius:21px;background:var(--surface-1);min-width:0}.cf-smart-section{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:10px}.cf-smart-section h2{font-size:18px;letter-spacing:-.025em;margin-top:4px}.cf-smart-count{background:var(--blue-soft);color:var(--blue);border-radius:99px;padding:5px 9px;font-size:11px}.cf-smart-alert{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}.cf-smart-alert:last-child{border:0}.cf-smart-alert-icon{border-radius:12px;padding:10px;background:var(--surface-2);height:40px}.cf-smart-alert-icon svg{width:19px;height:19px}.cf-smart-alert-content{min-width:0}.cf-smart-alert-content strong{font-size:13px}.cf-smart-alert-content p{font-size:12px;line-height:1.55;color:var(--text-2);margin:6px 0}.cf-smart-alert-content button{font-size:11px;color:var(--blue);font-weight:750}.cf-smart-alert-content button svg{width:12px;height:12px;vertical-align:middle}.cf-smart-feature{background:var(--surface-2);border-radius:15px;padding:14px;margin-bottom:10px}.cf-smart-feature span{display:block;color:var(--text-2);font-size:12px}.cf-smart-feature strong{display:block;font-size:23px;margin-top:7px}.cf-smart-bill{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;padding:10px 0;border-bottom:1px solid var(--border)}.cf-smart-bill small{display:block;color:var(--text-3);margin-top:4px}.cf-smart-forecast{margin-bottom:18px}.cf-smart-forecast-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.cf-smart-projection{padding:15px;border:1px solid var(--border);border-radius:15px;background:var(--surface-2)}.cf-smart-projection span,.cf-smart-projection small{display:block;color:var(--text-3);font-size:11px}.cf-smart-projection strong{display:block;font-size:clamp(18px,2.6vw,27px);margin:10px 0;overflow-wrap:anywhere}.cf-smart-projection div{margin-top:11px;font-size:11px;color:var(--text-2);line-height:1.8}.cf-smart-details{border:1px solid var(--border);background:var(--surface-1);border-radius:19px;margin-bottom:30px}.cf-smart-details>summary{cursor:pointer;list-style:none;padding:17px 19px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750}.cf-smart-details>summary::-webkit-details-marker{display:none}.cf-smart-details>summary svg{width:16px;height:16px}.cf-smart-details>summary svg:last-child{margin-left:auto}.cf-smart-old{padding:12px 17px 20px;border-top:1px solid var(--border)}@media(max-width:750px){.cf-smart-primary,.cf-smart-columns{grid-template-columns:1fr}.cf-smart-primary{padding:21px}.cf-smart-calcs>div{padding:10px}.cf-smart-card{padding:17px}.cf-smart-settings{gap:7px}.cf-smart-settings .cf-smart-softbtn{flex:1 1 105px}.cf-smart-forecast-grid{grid-template-columns:1fr}.cf-smart-projection{display:grid;grid-template-columns:1fr auto;align-items:center}.cf-smart-projection strong{grid-row:1/3;grid-column:2;margin:0}.cf-smart-projection div{grid-column:1/-1}}
+</style>
+
+<style id="cf-vision-timeline-css">
+.cf-vision-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.cf-vision-actions button{min-width:0;min-height:66px;background:var(--surface-1);border:1px solid var(--border);border-radius:16px;display:flex;justify-content:center;align-items:center;gap:9px;padding:12px 10px;color:var(--text-1);font-weight:750;font-size:12px;text-align:center;transition:transform .15s ease,border-color .15s}
+.cf-vision-actions button:hover{transform:translateY(-2px);border-color:var(--blue)}.cf-vision-actions svg{width:18px;height:18px;flex:none;color:var(--blue)}
+.cf-vision-preview{margin:0 0 18px}.cf-vision-list{display:grid;gap:0}.cf-vision-event{display:grid;grid-template-columns:90px 36px 1fr auto;align-items:start;gap:13px;padding:15px 0;border-bottom:1px solid var(--border)}.cf-vision-event:last-child{border-bottom:0}.cf-vision-date{color:var(--text-3);font-weight:750;font-size:12px;padding-top:9px}.cf-vision-icon{border:1px solid var(--border);background:var(--surface-2);width:34px;height:34px;border-radius:11px;display:grid;place-items:center}.cf-vision-icon svg{width:16px;height:16px}.cf-vision-name{font-size:13px;font-weight:750;color:var(--text-1);overflow-wrap:anywhere}.cf-vision-desc{font-size:11px;color:var(--text-3);margin-top:5px;line-height:1.55}.cf-vision-money{font-weight:800;font-size:13px;white-space:nowrap;padding-top:8px}.cf-vision-note{font-size:11px;line-height:1.7;color:var(--text-3);margin-top:13px}.cf-timeline-header{margin-bottom:20px}.cf-timeline-header h1{font-size:clamp(26px,4vw,38px);letter-spacing:-.04em;margin:5px 0 8px}.cf-timeline-header p{color:var(--text-2);font-size:13px;line-height:1.65;max-width:690px}.cf-timeline-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.cf-timeline-metric{padding:18px;border:1px solid var(--border);border-radius:17px;background:var(--surface-1)}.cf-timeline-metric span{display:block;color:var(--text-3);font-size:11px}.cf-timeline-metric strong{display:block;font-size:clamp(20px,2.5vw,29px);margin-top:8px;overflow-wrap:anywhere}.cf-timeline-metric small{display:block;font-size:10px;color:var(--text-3);margin-top:6px;line-height:1.5}.cf-timeline-toggle{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.cf-timeline-toggle button{border:1px solid var(--border);background:var(--surface-2);padding:9px 15px;border-radius:999px;font-size:12px;font-weight:750}.cf-timeline-toggle button.active{background:var(--blue);color:white}.cf-timeline-days{margin-top:16px}.cf-timeline-empty{padding:20px;text-align:center;color:var(--text-3);font-size:13px;line-height:1.7}.cf-timeline-warn{padding:13px 15px;background:var(--amber-soft);border-radius:12px;font-size:12px;line-height:1.6;color:var(--text-2);margin:10px 0}
+@media(max-width:760px){.cf-vision-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-vision-actions button{min-height:58px}.cf-timeline-metrics{grid-template-columns:1fr 1fr}.cf-timeline-metric:last-child{grid-column:span 2}}
+@media(max-width:460px){.cf-vision-event{grid-template-columns:58px 28px 1fr;gap:7px}.cf-vision-icon{width:28px;height:28px}.cf-vision-icon svg{width:14px;height:14px}.cf-vision-money{grid-column:3;padding-top:0}.cf-vision-date{font-size:10px;padding-top:6px}.cf-timeline-metric{padding:13px}.cf-timeline-metric strong{font-size:19px}.cf-vision-actions button{font-size:11px}}
+</style>
+
+<style id="cf-tl-edit-css">
+.cf-tl-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cf-tl-add{border:0;border-radius:12px;background:var(--blue);color:#fff;font-size:12px;font-weight:750;padding:11px 14px;display:inline-flex;align-items:center;gap:7px;min-height:42px}.cf-tl-add svg,.cf-tl-edit svg{width:15px;height:15px}.cf-tl-edit{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);border-radius:10px;padding:7px 9px;background:var(--surface-2);font-size:11px;font-weight:750;color:var(--text-2)}.cf-timeline-modal{position:fixed;inset:0;z-index:180;background:rgba(5,8,21,.70);display:none;justify-content:center;align-items:center;padding:16px}.cf-timeline-modal.open{display:flex}.cf-timeline-dialog{background:var(--surface-3);border:1px solid var(--border);color:var(--text-1);border-radius:24px;padding:24px;max-width:500px;width:100%;max-height:92dvh;overflow-y:auto;box-shadow:0 30px 90px rgba(0,0,0,.3)}.cf-timeline-dialog h2{font-size:21px;margin-bottom:8px}.cf-tl-form{display:grid;gap:12px;margin-top:16px}.cf-tl-form label{font-size:12px;color:var(--text-2);font-weight:700;display:grid;gap:5px}.cf-tl-form .input{min-height:45px}.cf-tl-form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}.cf-tl-form-actions button{min-height:44px;border-radius:11px;padding:11px 15px;background:var(--surface-2);border:1px solid var(--border);font-weight:750;font-size:13px}.cf-tl-form-actions button.primary{background:var(--blue);color:white}.cf-tl-form-actions button.danger{color:var(--red);margin-right:auto}.cf-tl-msg{font-size:12px;color:var(--red);min-height:14px}.cf-vision-event .cf-vision-money{min-width:110px;text-align:right}@media(max-width:460px){.cf-vision-event .cf-vision-money{grid-column:3;text-align:left}.cf-timeline-dialog{padding:19px}.cf-tl-form-actions button{flex:1}.cf-tl-form-actions button.danger{flex:0 0 100%}}
+</style>
 </head>
 <body>
 
@@ -524,6 +549,7 @@ button:disabled{cursor:not-allowed;opacity:.57}
     <div class="hdr-actions">
       <button class="icon-btn" onclick="toggleSearch()"><svg data-lucide="search"></svg></button>
       <button class="icon-btn" onclick="openSplitwiseHub()" title="Splitwise"><svg data-lucide="users-round"></svg></button>
+      <button class="icon-btn" type="button" title="Personalize CashFlow" aria-label="Personalize CashFlow" onclick="cfOpenOnboarding(false)"><svg data-lucide="sliders-horizontal"></svg></button>
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()"><svg data-lucide="moon"></svg></button>
       <button class="icon-btn" onclick="handleSignOut()" title="Sign out"><svg data-lucide="log-out"></svg></button>
       <button class="add-btn-desktop" onclick="openModal()"><svg data-lucide="plus" style="width:13px;height:13px"></svg> Add</button>
@@ -547,6 +573,7 @@ button:disabled{cursor:not-allowed;opacity:.57}
     <button class="pill nav-btn active" data-tab="story" onclick="switchTab('story')"><svg data-lucide="home"></svg><span>Home</span></button>
     <button class="pill nav-btn" data-tab="work" onclick="switchTab('work')"><svg data-lucide="clock-3"></svg><span>Work</span></button>
     <button class="pill nav-btn" data-tab="calendar" onclick="switchTab('calendar')"><svg data-lucide="calendar"></svg><span>Calendar</span></button>
+    <button class="pill nav-btn" data-tab="timeline" onclick="switchTab('timeline')"><svg data-lucide="calendar-clock"></svg><span>Timeline</span></button>
     <button class="pill nav-btn" data-tab="tools" onclick="switchTab('tools')"><svg data-lucide="download"></svg><span>Tools</span></button>
     <button class="pill nav-btn" data-tab="ask" onclick="switchTab('ask')"><svg data-lucide="message-circle"></svg><span>Insights</span></button>
     <button class="pill nav-btn" data-tab="people" onclick="switchTab('people')"><svg data-lucide="user-check"></svg><span>Clients</span></button>
@@ -563,6 +590,7 @@ button:disabled{cursor:not-allowed;opacity:.57}
 </div>
 
 <main id="main-content" tabindex="-1"></main>
+<div class="cf-onboard-layer" id="cf-onboard-layer" role="presentation"><section class="cf-onboard-dialog" role="dialog" aria-modal="true" aria-labelledby="cf-onboard-heading"><div id="cf-onboard-content"></div></section></div>
 <div id="cf-toast" class="cf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Add Transaction Modal -->
@@ -1732,12 +1760,14 @@ function renderMain() {
   if (state.tab === "work") el.innerHTML = dhootWorkView();
    else if (state.tab === "story") el.innerHTML = renderDashboard();
   else if (state.tab === "calendar") el.innerHTML = renderCalendar();
+  else if (state.tab === "timeline") el.innerHTML = renderMoneyTimeline();
   else if (state.tab === "tools") el.innerHTML = renderTools();
   else if (state.tab === "ask") el.innerHTML = renderAsk();
   else if (state.tab === "people") el.innerHTML = renderPeople();
   if(cf21LoadWarnings.length){
     el.insertAdjacentHTML('afterbegin',`<div class="card" role="alert" style="padding:14px;border-color:var(--red);margin-bottom:15px"><strong style="color:var(--red)">Some records could not load</strong><p class="body-sm" style="margin:7px 0">${cf21LoadWarnings.map(x=>esc(x)).join('<br>')}</p><p class="caption">These tables may need installing. Open Work → Copy complete setup SQL, run it in Supabase SQL Editor (after backup), then refresh. Totals are incomplete until setup succeeds.</p><button class="pill active" onclick="bootApp()" style="margin-top:8px">Retry loading</button></div>`);
   }
+  // Keep Home focused on financial information; personalization stays in the header settings control.
   el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in");
   refreshIcons();
 }
@@ -2385,7 +2415,133 @@ function updateAffordReserve() {
   document.getElementById("cf2-safe").textContent=d.safe===null?"Set starting balance":fmt(Math.max(0,d.safe));
   updateAffordCalculator();
 }
-function renderDashboard() {
+/* Universal CashFlow Money Timeline (read-only; existing save paths unchanged). */
+let cfTimelineDays = 30;
+function cfTimelineDateAdd(iso, amount){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+amount);return dayStr(d);}
+function cfTimelineEvents(days=30){
+ const start=dayStr(),end=cfTimelineDateAdd(start,days);
+ const ev=[];
+ // Bills are a commitment and are never counted as having already been paid.
+ BILLS.filter(b=>b.isActive&&!b.isPaid&&b.nextDue&&b.currency==='USD'&&b.nextDue>=start&&b.nextDue<=end).forEach(b=>ev.push({date:b.nextDue,name:b.name||'Bill',amount:Number(b.amount)||0,type:'bill',sourceId:String(b.id),status:'Scheduled unpaid bill',icon:'receipt',detail:'Expense expected; not yet recorded as a transaction'}));
+ // Upcoming recurring entries: use the saved next_due only; don't invent additional occurrences.
+ RECURRING.filter(r=>r.isActive&&r.nextDue&&r.nextDue>=start&&r.nextDue<=end&&(r.currency||'USD')==='USD').forEach(r=>ev.push({date:r.nextDue,name:r.description||getCat(r.category,r.type).label,amount:Number(r.amount)||0,type:r.type==='income'?'expected':'recurring',sourceId:String(r.id),status:r.type==='income'?'Recurring income expected':'Recurring expense expected',icon:r.type==='income'?'arrow-down-left':'repeat',detail:'Scheduled entry, not a confirmed transaction'}));
+ return ev.filter(e=>Number.isFinite(e.amount)&&e.amount>0).sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));
+}
+function cfTimelineReceivables(){
+ // Recorded work creates a receivable, never an automatic bank deposit.
+ const totalEarned=CLIENT_WORK.reduce((v,w)=>v+(Number(w.amount)||0),0);
+ const paid=TXS.filter(t=>t.type==='income'&&t.category==='people_payment'&&t.personId&&t.currency==='USD').reduce((v,t)=>v+(Number(t.amount)||0),0);
+ return Math.max(0,totalEarned-paid);
+}
+function cfTimelineRow(e){
+ const isIncome=e.type==='expected'; const amount=(isIncome?'+':'−')+fmt(e.amount,'USD');
+ const date=new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+ return `<div class="cf-vision-event"><div class="cf-vision-date">${esc(date)}</div><div class="cf-vision-icon" style="color:${isIncome?'var(--green)':'var(--amber)'}">${icon(e.icon)}</div><div><div class="cf-vision-name">${esc(e.name)}</div><div class="cf-vision-desc">${esc(e.status)} · ${esc(e.detail)}</div></div><strong class="cf-vision-money" style="color:${isIncome?'var(--green)':'var(--text-1)'}">${amount}</strong>${e.sourceId?`<button class="cf-tl-edit" onclick='cfTimelineOpenEdit(${JSON.stringify(e.type==='bill'?'bill':'recurring')},${JSON.stringify(e.sourceId)})' title="Edit scheduled money" aria-label="Edit ${esc(e.name)}">${icon('pencil')} Edit</button>`:''}</div>`;
+}
+function cfTimelinePreview(){const events=cfTimelineEvents(30).slice(0,3);return `<div class="cf-vision-list">${events.length?events.map(cfTimelineRow).join(''):'<div class="cf-timeline-empty">No upcoming USD bills or recurring entries recorded. Add bills to start planning.</div>'}</div><p class="cf-vision-note">Upcoming events are estimates, not bank-verified charges or deposits. Client work owed is tracked separately.</p>`;}
+function cfTimelineSetDays(days){cfTimelineDays=days;renderMain();}
+function renderMoneyTimeline(){
+ const events=cfTimelineEvents(cfTimelineDays),debits=events.filter(e=>e.type!=='expected').reduce((a,e)=>a+e.amount,0),credits=events.filter(e=>e.type==='expected').reduce((a,e)=>a+e.amount,0);
+ const received=cfTimelineReceivables();
+ const duplicateCaution=BILLS.some(b=>b.isActive&&!b.isPaid)&&RECURRING.some(r=>r.isActive);
+ return `<div class="cf-timeline-header"><span class="cf-smart-eyebrow">LOOKING AHEAD</span><h1>Your Money Timeline</h1><p>See what's scheduled, what's expected, and what is still owed to you. Pending amounts are never treated as received cash.</p></div>
+ <div class="cf-timeline-toggle" aria-label="Timeline period">${[7,30,90].map(n=>`<button class="${cfTimelineDays===n?'active':''}" onclick="cfTimelineSetDays(${n})">Next ${n} days</button>`).join('')}</div>
+ <div class="cf-timeline-metrics"><div class="cf-timeline-metric"><span>Upcoming expenses (USD)</span><strong>−${fmt(debits)}</strong><small>Scheduled bills and recurring expenses</small></div><div class="cf-timeline-metric"><span>Expected recurring income</span><strong style="color:var(--green)">+${fmt(credits)}</strong><small>Not included in received income</small></div><div class="cf-timeline-metric"><span>Unpaid client work</span><strong>${clientLedgerError?'Unavailable':fmt(received)}</strong><small>Undated receivables; not deposited cash</small></div></div>
+ ${cf21LoadWarnings.length||clientLedgerError?'<div class="cf-timeline-warn">Some data did not load. Totals are incomplete. Retry from Home before relying on these estimates.</div>':''}
+ ${duplicateCaution?'<div class="cf-timeline-warn">A recurring expense may also be saved as a bill. Check for duplicates before using projected expenses.</div>':''}
+ <div class="cf-smart-card"><div class="cf-smart-section"><div><span class="cf-smart-eyebrow">SCHEDULE</span><h2>Upcoming money movements</h2></div><div class="cf-tl-actions"><span class="cf-smart-count">${events.length} events</span><button class="cf-tl-add" onclick="cfTimelineOpenEdit()">${icon('plus')} Add money</button></div></div><div class="cf-vision-list">${events.length?events.map(cfTimelineRow).join(''):'<div class="cf-timeline-empty">Nothing scheduled in this window. Select Add money to create a scheduled item.</div>'}</div></div>
+ `;
+}
+
+
+/* Edit scheduled money using the existing Supabase recurring and bills tables. */
+let cfTimelineEditing=null;
+function cfTimelineOpenEdit(kind='recurring',id=null){
+ const item=id?(kind==='bill'?BILLS:RECURRING).find(x=>String(x.id)===String(id)):null;
+ if(id&&!item){alert('This scheduled item is no longer available. Refresh and try again.');return;}
+ cfTimelineEditing={kind,id:item?String(item.id):null};
+ const isBill=kind==='bill';
+ const type=isBill?'expense':item?.type||'expense';
+ const cat=item?.category||(type==='income'?'salary':'bills');
+ const opts=(type==='income'?INCOME_CATS:EXPENSE_CATS).map(c=>`<option value="${esc(c.key)}" ${c.key===cat?'selected':''}>${esc(c.label)}</option>`).join('');
+ const value=item?.amount||'';const date=(item?.nextDue||dayStr()).slice(0,10);
+ const name=item?(isBill?item.name:item.description):'';
+ document.getElementById('cf-timeline-editor').innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2>${item?'Edit':'Add'} scheduled ${isBill?'bill':'money'}</h2><button class="icon-btn" onclick="cfTimelineCloseEdit()" aria-label="Close">${icon('x')}</button></div><p class="body-sm">These are planned amounts. Saving will <strong>not</strong> record an actual deposit or withdrawal.</p><form class="cf-tl-form" id="cf-tl-form" onsubmit="cfTimelineSave(event)"><label>Money type<select class="input" id="cf-tl-type" ${isBill?'disabled':''} onchange="cfTimelineCategoryOptions()"><option value="expense" ${type==='expense'?'selected':''}>Money going out</option><option value="income" ${type==='income'?'selected':''}>Money coming in</option></select></label><label>Name<input class="input" id="cf-tl-name" maxlength="120" required placeholder="e.g. Rent, paycheck" value="${esc(name||'')}"></label><label>Amount (USD)<input class="input" id="cf-tl-amount" type="number" min="0.01" max="999999999.99" step="0.01" value="${esc(value)}" required></label><label>Next scheduled date<input class="input" id="cf-tl-date" type="date" value="${esc(date)}" required></label>${!isBill?`<label>Repeat<select class="input" id="cf-tl-frequency">${['daily','weekly','monthly','yearly'].map(f=>`<option value="${f}" ${f===(item?.frequency||'monthly')?'selected':''}>${f[0].toUpperCase()+f.slice(1)}</option>`).join('')}</select></label><label>Category<select class="input" id="cf-tl-category">${opts}</select></label>`:'<p class="caption">Bill schedules stay in your existing Bills section. This updates the next due date and amount.</p>'}<div class="cf-tl-msg" id="cf-tl-msg" aria-live="polite"></div><div class="cf-tl-form-actions">${item&&!isBill?'<button type="button" class="danger" onclick="cfTimelineDelete()">Delete</button>':''}<button type="button" onclick="cfTimelineCloseEdit()">Cancel</button><button type="submit" class="primary" id="cf-tl-save">${item?'Save changes':'Add scheduled money'}</button></div></form>`;
+ document.getElementById('cf-timeline-modal').classList.add('open');refreshIcons();
+}
+function cfTimelineCategoryOptions(){const type=document.getElementById('cf-tl-type').value;document.getElementById('cf-tl-category').innerHTML=(type==='income'?INCOME_CATS:EXPENSE_CATS).map(c=>`<option value="${esc(c.key)}">${esc(c.label)}</option>`).join('');}
+function cfTimelineCloseEdit(){document.getElementById('cf-timeline-modal').classList.remove('open');cfTimelineEditing=null;}
+async function cfTimelineSave(ev){
+ ev.preventDefault();const editing=cfTimelineEditing;if(!editing)return;
+ const name=document.getElementById('cf-tl-name').value.trim();const amt=Number(document.getElementById('cf-tl-amount').value);const date=document.getElementById('cf-tl-date').value;const btn=document.getElementById('cf-tl-save');const message=document.getElementById('cf-tl-msg');
+ if(!name||!Number.isFinite(amt)||amt<=0||amt>999999999.99||!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+'T12:00:00'))){message.textContent='Enter a valid name, date and positive amount.';return;}
+ btn.disabled=true;btn.textContent='Saving...';message.textContent='';
+ try{const uid=await getUserId();if(!uid)throw Error('Sign in again to save your changes.');
+ if(editing.kind==='bill'){
+ const patch={name,amount:amt,next_due:date,due_day:Number(date.slice(8,10))};
+ const {data,error}=await sb.from('bills').update(patch).eq('id',editing.id).eq('user_id',uid).select().single();if(error)throw error;
+ const idx=BILLS.findIndex(b=>String(b.id)===editing.id);if(idx!==-1)BILLS[idx]=mapBill(data);
+ }else{
+ const type=document.getElementById('cf-tl-type').value;const cat=document.getElementById('cf-tl-category').value;const frequency=document.getElementById('cf-tl-frequency').value;
+ if(!['income','expense'].includes(type)||!['daily','weekly','monthly','yearly'].includes(frequency)||(type==='income'?INCOME_CATS:EXPENSE_CATS).every(c=>c.key!==cat))throw Error('Select a valid type, category and frequency.');
+ const patch={type,description:name,amount:amt,currency:'USD',category:cat,frequency,start_date:date,next_due:date};
+ if(editing.id){const {data,error}=await sb.from('recurring').update(patch).eq('id',editing.id).eq('user_id',uid).select().single();if(error)throw error;const idx=RECURRING.findIndex(r=>String(r.id)===editing.id);if(idx!==-1)RECURRING[idx]=mapRecurring(data);}
+ else{const {data,error}=await sb.from('recurring').insert({...patch,end_date:null,is_active:true,user_id:uid}).select().single();if(error)throw error;RECURRING.push(mapRecurring(data));}
+ }cfTimelineCloseEdit();renderMain();if(typeof cfToast==='function')cfToast('Scheduled money saved');
+ }catch(err){message.textContent='Could not save: '+(err.message||String(err));}finally{btn.disabled=false;btn.textContent='Save changes';}
+}
+async function cfTimelineDelete(){const editing=cfTimelineEditing;if(!editing?.id||editing.kind!=='recurring')return;if(!confirm('Delete this scheduled entry? Past recorded transactions will not be deleted.'))return;
+ const btn=document.getElementById('cf-tl-save'),message=document.getElementById('cf-tl-msg');btn.disabled=true;try{const uid=await getUserId();if(!uid)throw Error('Please sign in.');const {error}=await sb.from('recurring').delete().eq('id',editing.id).eq('user_id',uid);if(error)throw error;RECURRING=RECURRING.filter(r=>String(r.id)!==editing.id);cfTimelineCloseEdit();renderMain();}catch(err){message.textContent='Could not delete: '+err.message;}finally{btn.disabled=false;}}
+
+/* CashFlow Smart Balance — conservative finance home, backed by existing models. */
+function cfSmartAlerts() {
+ const now=dayStr(); const in7=new Date();in7.setDate(in7.getDate()+7);const end=dayStr(in7);
+ const due=BILLS.filter(b=>b.isActive&&!b.isPaid&&b.nextDue&&b.nextDue<=end).sort((a,b)=>String(a.nextDue).localeCompare(String(b.nextDue)));
+ const messages=[];
+ if(cf21LoadWarnings.length||clientLedgerError||dhootWorkError)messages.push({icon:'cloud-alert',tone:'var(--red)',title:'Some data could not load',body:'Totals may be incomplete. Retry loading before making a decision.',action:'bootApp()',cta:'Retry'});
+ if(!cf21LoadWarnings.length){
+  if(due.length)messages.push({icon:'calendar-clock',tone:'var(--amber)',title:due.length+' bill'+(due.length===1?'':'s')+' due or overdue',body:due.slice(0,2).map(b=>esc(b.name)+' · '+fmt(Number(b.amount)||0,b.currency||'USD')+' · '+(String(b.nextDue)<now?'Overdue':String(b.nextDue)===now?'Today':esc(String(b.nextDue)))).join(' / '),action:"switchTab('story');document.getElementById('cf-smart-detail')?.setAttribute('open','')",cta:'View bills'});
+  const monthly=monthStr(new Date());const exp=TXS.filter(t=>t.type==='expense'&&t.currency==='USD'&&t.date.slice(0,7)===monthly).reduce((a,t)=>a+Number(t.amount||0),0);
+  const inc=TXS.filter(t=>t.type==='income'&&t.currency==='USD'&&t.date.slice(0,7)===monthly).reduce((a,t)=>a+Number(t.amount||0),0);
+  if(exp>inc&&inc>0)messages.push({icon:'trending-up',tone:'var(--amber)',title:'Expenses exceed received income this month',body:'Recorded expenses exceed income by '+fmt(exp-inc)+'. Review your transactions.',action:"cfSmartOpenDetails()",cta:'Review'});
+ }
+ if(!messages.length)messages.push({icon:'check-circle-2',tone:'var(--green)',title:'No urgent alerts from available records',body:'Keep recording transactions and bills for more useful updates.',action:"cfSmartOpenDetails()",cta:'Explore'});
+ return messages.slice(0,3);
+}
+function cfSmartOpenDetails(){const d=document.getElementById('cf-smart-detail');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}}
+function cfSmartSetOpening(){const el=document.getElementById('cf-smart-opening');if(!el)return;const raw=el.value.trim();if(raw===''){Store.set('cf2_opening_balance_'+(_cachedUserId||'unknown'),null);renderMain();return;}const n=Number(raw);if(!Number.isFinite(n)||Math.abs(n)>1000000000000){alert('Enter a valid USD opening balance.');return;}Store.set('cf2_opening_balance_'+(_cachedUserId||'unknown'),n);renderMain();}
+function cfSmartSetReserve(){const el=document.getElementById('cf-smart-reserve');if(!el)return;const n=Number(el.value);if(!Number.isFinite(n)||n<0||n>1000000000000){alert('Enter a valid nonnegative reserve.');return;}Store.set(CF2_RESERVE_KEY,n);renderMain();}
+function renderDashboard(){
+ const d=computeAffordData();const alerts=cfSmartAlerts();const today=dayStr();
+ const end=new Date();end.setDate(end.getDate()+30);const d30=dayStr(end);
+ const due30=BILLS.filter(b=>b.isActive&&!b.isPaid&&b.nextDue>=today&&b.nextDue<=d30&&b.currency==='USD').sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
+ const net=cf2UsdNet();const f7=cf21Forecast(7),f30=cf21Forecast(30),f90=cf21Forecast(90);
+ const money=v=>fmt(Number(v)||0,'USD');
+ return `<div class="cf-smart">
+  <div class="cf-smart-heading"><div><div class="cf-smart-eyebrow">YOUR FINANCIAL OVERVIEW</div><h1>Money, made clearer.</h1><p>Understand what you recorded, what comes next, and what needs attention.</p></div><button class="cf-smart-softbtn" onclick="openModal()">${icon('plus')} Add transaction</button></div>
+  <section class="cf-smart-primary" aria-label="Estimated spending room">
+   <div class="cf-smart-main"><div class="cf-smart-label">ESTIMATED SAFE-TO-SPEND · USD</div><div class="cf-smart-total">${d.safe===null?'—':money(d.safe)}</div><p>${d.safe===null?'Set your opening balance to calculate a planning estimate.':'After recorded cash flow, upcoming unpaid USD bills (30 days), and your reserve.'}</p><div class="cf-smart-pill">${icon('info')} Planning estimate · not bank-verified · unpaid earnings excluded</div></div>
+   <div class="cf-smart-calcs"><div><span>Recorded net cash flow (USD)</span><strong>${money(net)}</strong></div><div><span>Opening balance</span><strong>${d.opening===null?'Not set':money(d.opening)}</strong></div><div><span>Unpaid bills · 30 days</span><strong>−${money(d.bills)}</strong></div><div><span>Planning reserve</span><strong>−${money(d.reserve)}</strong></div></div>
+  </section>
+  <div class="cf-vision-actions" aria-label="Quick actions">
+  <button onclick="openModal()">${icon('plus-circle')}<span>Add transaction</span></button>
+  <button onclick="switchTab('work')">${icon('clock-3')}<span>Log work</span></button>
+  <button onclick="switchTab('people')">${icon('users')}<span>Client payments</span></button>
+  <button onclick="switchTab('timeline')">${icon('calendar-clock')}<span>Money timeline</span></button>
+ </div>
+ <section class="cf-vision-preview cf-smart-card">
+  <div class="cf-smart-section"><div><span class="cf-smart-eyebrow">YOUR NEXT MOVES</span><h2>Money timeline</h2></div><button class="cf-smart-softbtn" onclick="switchTab('timeline')">Explore ${icon('arrow-right')}</button></div>
+  ${cfTimelinePreview()}
+ </section>
+  <div class="cf-smart-settings"><label>Opening USD balance <input id="cf-smart-opening" class="input" type="number" step="0.01" placeholder="Set balance" value="${d.opening===null?'':d.opening}"></label><button class="cf-smart-softbtn" onclick="cfSmartSetOpening()">Save balance</button><label>Reserve <input id="cf-smart-reserve" class="input" type="number" min="0" step="0.01" value="${d.reserve}"></label><button class="cf-smart-softbtn" onclick="cfSmartSetReserve()">Save reserve</button></div>
+  ${d.excluded?`<p class="cf-smart-currency-note">${d.excluded} non-USD transaction(s) excluded. Currency conversion isn't estimated.</p>`:''}
+  <div class="cf-smart-columns"><section class="cf-smart-card"><div class="cf-smart-section"><div><span class="cf-smart-eyebrow">NEXT STEPS</span><h2>Needs your attention</h2></div><span class="cf-smart-count">${alerts.length}</span></div><div class="cf-smart-alerts">${alerts.map(a=>`<div class="cf-smart-alert"><div class="cf-smart-alert-icon" style="color:${a.tone}">${icon(a.icon)}</div><div class="cf-smart-alert-content"><strong>${a.title}</strong><p>${a.body}</p><button onclick="${a.action}">${a.cta} ${icon('arrow-right')}</button></div></div>`).join('')}</div></section>
+  <section class="cf-smart-card"><div class="cf-smart-section"><div><span class="cf-smart-eyebrow">COMING UP</span><h2>Next 30 days</h2></div>${icon('calendar-days')}</div><div class="cf-smart-feature"><span>Upcoming unpaid USD bills</span><strong>${money(d.bills)}</strong></div>${due30.length?due30.slice(0,4).map(b=>`<div class="cf-smart-bill"><span>${esc(b.name)}<small>${esc(b.nextDue)}</small></span><strong>${money(b.amount)}</strong></div>`).join(''):'<p class="cf-smart-muted">No upcoming unpaid USD bills recorded.</p>'}<p class="cf-smart-muted">Bills already marked paid are excluded.</p></section></div>
+  <section class="cf-smart-card cf-smart-forecast"><div class="cf-smart-section"><div><span class="cf-smart-eyebrow">LOOKING AHEAD</span><h2>Cash-flow outlook</h2></div>${icon('chart-no-axes-combined')}</div><p class="cf-smart-muted">Historical transaction trend projections—not guaranteed future deposits or account balances. Forecasts may omit upcoming one-time bills and client receivables.</p><div class="cf-smart-forecast-grid">${[[7,f7],[30,f30],[90,f90]].map(([n,f])=>`<div class="cf-smart-projection"><span>Next ${n} days</span><strong style="color:${f.net<0?'var(--red)':'var(--text-1)'}">${money(f.net)}</strong><small>Projected net flow</small><div>Income ${money(f.income)}<br>Expenses ${money(f.expense)}</div></div>`).join('')}</div></section>
+  <details class="cf-smart-details" id="cf-smart-detail"><summary>${icon('layout-dashboard')} Full financial dashboard, work summaries, planning & insights ${icon('chevron-down')}</summary><div class="cf-smart-old">${renderDashboardLegacy()}</div></details>
+  </div>`;
+}
+function renderDashboardLegacy() {
   const health = computeFinancialHealthScore();
   const trend = computeHealthTrend();
   const insights = generateInsights();
@@ -3733,6 +3889,45 @@ async function handleSignOut() { await sb.auth.signOut(); }
 function showAuthScreen() { document.getElementById("auth-screen").style.display = "flex"; }
 function hideAuthScreen() { document.getElementById("auth-screen").style.display = "none"; }
 
+
+/* CashFlow account-specific onboarding. All existing features remain accessible. */
+const CF_PROFILES=[['student','Student','graduation-cap'],['employee','Salaried employee','briefcase-business'],['hourly','Hourly worker','clock-3'],['freelancer','Freelancer / business owner','laptop'],['family','Household / family','users'],['other','Personal finance','wallet']];
+const CF_FEATURES=[['expenses','Income & expenses','arrow-left-right','story'],['budget','Budgets & bills','piggy-bank','story'],['insights','Financial insights','sparkles','ask'],['work','Work & paychecks','clock-3','work'],['clients','Client payments','users','people'],['calendar','Calendar','calendar-days','calendar'],['reports','Reports & exports','download','tools']];
+const CF_DEFAULT_FEATURES=['expenses','budget','insights','work','clients'];
+let cfOnboardingDraft=null;
+let cfOnboardingPromptedUser=null;
+function cfOnboardingKey(){return _cachedUserId?'cf_onboarding_v1_'+_cachedUserId:null;}
+function cfReadOnboarding(){const k=cfOnboardingKey();if(!k)return null;try{const raw=localStorage.getItem(k);if(!raw)return null;const p=JSON.parse(raw);if(!p||!Array.isArray(p.features))return null;return {profile:p.profile||'employee',features:p.features.filter(f=>CF_FEATURES.some(x=>x[0]===f)),completed:!!p.completed};}catch(e){return null;}}
+function cfOpenOnboarding(firstRun=false){
+ if(!_cachedUserId)return;
+ const saved=cfReadOnboarding();cfOnboardingDraft={profile:saved?.profile||'employee',features:[...(saved?.features||CF_DEFAULT_FEATURES)],firstRun:!!firstRun};
+ const layer=document.getElementById('cf-onboard-layer');layer.classList.add('open');cfRenderOnboarding();
+}
+function cfRenderOnboarding(){
+ const p=cfOnboardingDraft;if(!p)return;
+ document.getElementById('cf-onboard-content').innerHTML=`<div class="cf-onboard-top"><span class="cf-onboard-kicker">Your CashFlow experience</span>${p.firstRun?'':`<button class="icon-btn" type="button" aria-label="Close personalization" onclick="cfCloseOnboarding()">${icon('x')}</button>`}</div>
+ <h2 class="cf-onboard-title" id="cf-onboard-heading">Make CashFlow yours.</h2>
+ <p class="cf-onboard-desc">Pick a starting point and the tools that matter most. You can change this anytime; all existing features and records stay available.</p>
+ <p class="cf-onboard-step">01 / What best describes you?</p>
+ <div class="cf-profile-options">${CF_PROFILES.map(([id,name,ico])=>`<button type="button" class="cf-profile-choice ${p.profile===id?'selected':''}" aria-pressed="${p.profile===id}" onclick="cfChooseProfile('${id}')">${icon(ico)} ${name}</button>`).join('')}</div>
+ <p class="cf-onboard-step">02 / What would you like on your home screen?</p>
+ <div class="cf-feature-grid">${CF_FEATURES.map(([id,label,ico])=>`<label class="cf-feature-choice ${p.features.includes(id)?'selected':''}"><input type="checkbox" ${p.features.includes(id)?'checked':''} onchange="cfToggleFeature('${id}',this.checked)">${icon(ico)}<span>${label}</span></label>`).join('')}</div>
+ <div class="cf-onboard-foot"><p class="cf-onboard-note">Preferences are saved on this device for your signed-in CashFlow account. Financial data remains in your existing Supabase tables.</p><button class="btn-primary" type="button" onclick="cfSaveOnboarding()">${p.firstRun?'Create my workspace':'Save preferences'} ${icon('arrow-right')}</button></div>`;
+ refreshIcons();
+}
+function cfChooseProfile(id){if(!CF_PROFILES.some(x=>x[0]===id))return;cfOnboardingDraft.profile=id;cfRenderOnboarding();}
+function cfToggleFeature(id,checked){if(!CF_FEATURES.some(x=>x[0]===id))return;const f=new Set(cfOnboardingDraft.features);if(checked)f.add(id);else f.delete(id);cfOnboardingDraft.features=[...f];cfRenderOnboarding();}
+function cfCloseOnboarding(){const p=cfOnboardingDraft;if(p?.firstRun)return;document.getElementById('cf-onboard-layer').classList.remove('open');cfOnboardingDraft=null;}
+function cfSaveOnboarding(){const key=cfOnboardingKey();if(!key||!cfOnboardingDraft)return;try{localStorage.setItem(key,JSON.stringify({profile:cfOnboardingDraft.profile,features:cfOnboardingDraft.features,completed:true,updatedAt:new Date().toISOString()}));}catch(e){alert('This browser blocked saving preferences. Please allow site storage and retry.');return;}document.getElementById('cf-onboard-layer').classList.remove('open');cfOnboardingDraft=null;state.tab='story';document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='story'));renderMain();}
+function cfPersonalPanel(){
+ const p=cfReadOnboarding();if(!p?.completed)return '';
+ const profile=CF_PROFILES.find(x=>x[0]===p.profile)?.[1]||'Personal finance';
+ const selected=CF_FEATURES.filter(f=>p.features.includes(f[0]));
+ return `<section class="cf-personal-panel" aria-label="Personalized shortcuts"><div class="cf-personal-head"><div><div class="cf-onboard-kicker">MY CASHFLOW</div><h3>Your workspace</h3><p>${esc(profile)} · Your chosen tools, one tap away</p></div><button class="cf-personal-personalize" onclick="cfOpenOnboarding(false)">${icon('sliders-horizontal')} Customize</button></div><div class="cf-personal-links">${selected.length?selected.map(([id,label,ico,tab])=>`<button class="cf-personal-link" type="button" onclick="cfGoFeature('${id}','${tab}')">${icon(ico)}<span>${esc(label)}</span>${icon('arrow-up-right')}</button>`).join(''):`<p class="body-sm">Choose a few favorite tools using Customize.</p>`}</div></section>`;
+}
+function cfGoFeature(id,tab){if(id==='budget'){state.mTab='budgets';}switchTab(tab);}
+function cfMaybeOnboard(){if(!_cachedUserId)return;const p=cfReadOnboarding();if(p?.completed)return;if(cfOnboardingPromptedUser===_cachedUserId)return;cfOnboardingPromptedUser=_cachedUserId;cfOpenOnboarding(true);}
+
 let cfBootSerial=0;
 async function bootApp() {
   const cfBootId=++cfBootSerial;
@@ -3756,6 +3951,7 @@ async function bootApp() {
   }
   renderMain();
   refreshIcons();
+  cfMaybeOnboard();
 }
 
 async function startApp() {
@@ -3777,6 +3973,7 @@ async function startApp() {
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
       CLIENT_WORK = []; dhootWork = []; dhootRates = []; dhootClock = null; dhootWorkError = ""; clientLedgerError = ""; cf21LoadWarnings=[]; _cachedUserId = null;
+      cfOnboardingDraft=null;cfOnboardingPromptedUser=null;document.getElementById("cf-onboard-layer").classList.remove("open");
       CHAT_MSGS = [{role:'assistant',html:'Welcome to CashFlow. Sign in to view your private chat history.'}];
     }
   });
@@ -4587,5 +4784,7 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
  };
 })();
 </script>
+
+<div id="cf-timeline-modal" class="cf-timeline-modal" role="dialog" aria-modal="true" aria-label="Edit planned money" onclick="if(event.target===this)cfTimelineCloseEdit()"><div class="cf-timeline-dialog"><div id="cf-timeline-editor"></div></div></div>
 </body>
 </html>
