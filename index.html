@@ -531,6 +531,9 @@ button:disabled{cursor:not-allowed;opacity:.57}
 <style id="cf-tl-edit-css">
 .cf-tl-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cf-tl-add{border:0;border-radius:12px;background:var(--blue);color:#fff;font-size:12px;font-weight:750;padding:11px 14px;display:inline-flex;align-items:center;gap:7px;min-height:42px}.cf-tl-add svg,.cf-tl-edit svg{width:15px;height:15px}.cf-tl-edit{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);border-radius:10px;padding:7px 9px;background:var(--surface-2);font-size:11px;font-weight:750;color:var(--text-2)}.cf-timeline-modal{position:fixed;inset:0;z-index:180;background:rgba(5,8,21,.70);display:none;justify-content:center;align-items:center;padding:16px}.cf-timeline-modal.open{display:flex}.cf-timeline-dialog{background:var(--surface-3);border:1px solid var(--border);color:var(--text-1);border-radius:24px;padding:24px;max-width:500px;width:100%;max-height:92dvh;overflow-y:auto;box-shadow:0 30px 90px rgba(0,0,0,.3)}.cf-timeline-dialog h2{font-size:21px;margin-bottom:8px}.cf-tl-form{display:grid;gap:12px;margin-top:16px}.cf-tl-form label{font-size:12px;color:var(--text-2);font-weight:700;display:grid;gap:5px}.cf-tl-form .input{min-height:45px}.cf-tl-form-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}.cf-tl-form-actions button{min-height:44px;border-radius:11px;padding:11px 15px;background:var(--surface-2);border:1px solid var(--border);font-weight:750;font-size:13px}.cf-tl-form-actions button.primary{background:var(--blue);color:white}.cf-tl-form-actions button.danger{color:var(--red);margin-right:auto}.cf-tl-msg{font-size:12px;color:var(--red);min-height:14px}.cf-vision-event .cf-vision-money{min-width:110px;text-align:right}@media(max-width:460px){.cf-vision-event .cf-vision-money{grid-column:3;text-align:left}.cf-timeline-dialog{padding:19px}.cf-tl-form-actions button{flex:1}.cf-tl-form-actions button.danger{flex:0 0 100%}}
 </style>
+<style id="cf-savings-styles">
+.cf-save-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.cf-save-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.cf-save-card{border-radius:18px;background:var(--surface-2);border:1px solid var(--border);padding:18px;min-width:0}.cf-save-card h3{font-size:16px;margin-bottom:8px;overflow-wrap:anywhere}.cf-save-card .cash-summary{font-size:25px;font-weight:850;letter-spacing:-.04em;overflow-wrap:anywhere}.cf-save-track{height:10px;border-radius:99px;overflow:hidden;background:var(--border);margin:14px 0 8px}.cf-save-fill{height:100%;background:linear-gradient(90deg,#6366f1,#20c997);border-radius:99px}.cf-save-details{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-2);line-height:1.55}.cf-save-buttons{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}.cf-save-buttons button{padding:10px 13px;border-radius:11px;background:var(--surface-3);border:1px solid var(--border);font-size:12px;font-weight:700}.cf-save-buttons button:first-child{background:var(--blue);color:#fff;border-color:transparent}.cf-save-empty{border:1px dashed var(--border);border-radius:15px;padding:23px;color:var(--text-2);font-size:13px;line-height:1.6;margin-top:12px}.cf-save-modal{position:fixed;inset:0;background:rgba(5,8,21,.75);z-index:210;display:none;align-items:center;justify-content:center;padding:15px}.cf-save-modal.open{display:flex}.cf-save-dialog{width:min(100%,480px);max-height:92dvh;overflow-y:auto;background:var(--surface-3);border:1px solid var(--border);padding:23px;border-radius:24px}.cf-save-dialog h2{font-size:21px}.cf-save-form{display:grid;gap:13px;margin-top:16px}.cf-save-form label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--text-2)}.cf-save-form input,.cf-save-form select{min-height:44px}.cf-save-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}.cf-save-actions button{padding:11px 15px;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;font-size:13px;font-weight:750}.cf-save-actions .primary{color:#fff;background:var(--blue);border:0}.cf-save-actions button:disabled{opacity:.45}.cf-save-error{min-height:14px;color:var(--red);font-size:12px}.cf-save-presets{display:flex;gap:6px;flex-wrap:wrap}.cf-save-presets button{border:1px solid var(--border);background:var(--surface-2);font-weight:650;font-size:11px;border-radius:9px;padding:9px 12px}.cf-save-presets button.active{border-color:var(--blue);color:var(--blue)}@media(max-width:700px){.cf-save-grid{grid-template-columns:1fr}.cf-save-dialog{padding:18px}}
+</style>
 </head>
 <body>
 
@@ -2447,6 +2450,7 @@ function renderMoneyTimeline(){
  <div class="cf-timeline-metrics"><div class="cf-timeline-metric"><span>Upcoming expenses (USD)</span><strong>−${fmt(debits)}</strong><small>Scheduled bills and recurring expenses</small></div><div class="cf-timeline-metric"><span>Expected recurring income</span><strong style="color:var(--green)">+${fmt(credits)}</strong><small>Not included in received income</small></div><div class="cf-timeline-metric"><span>Unpaid client work</span><strong>${clientLedgerError?'Unavailable':fmt(received)}</strong><small>Undated receivables; not deposited cash</small></div></div>
  ${cf21LoadWarnings.length||clientLedgerError?'<div class="cf-timeline-warn">Some data did not load. Totals are incomplete. Retry from Home before relying on these estimates.</div>':''}
  ${duplicateCaution?'<div class="cf-timeline-warn">A recurring expense may also be saved as a bill. Check for duplicates before using projected expenses.</div>':''}
+ ${cfSavingsSection()}
  <div class="cf-smart-card"><div class="cf-smart-section"><div><span class="cf-smart-eyebrow">SCHEDULE</span><h2>Upcoming money movements</h2></div><div class="cf-tl-actions"><span class="cf-smart-count">${events.length} events</span><button class="cf-tl-add" onclick="cfTimelineOpenEdit()">${icon('plus')} Add money</button></div></div><div class="cf-vision-list">${events.length?events.map(cfTimelineRow).join(''):'<div class="cf-timeline-empty">Nothing scheduled in this window. Select Add money to create a scheduled item.</div>'}</div></div>
  `;
 }
@@ -4744,5 +4748,65 @@ window.d35ExportPeriodCSV=function(){const month=document.getElementById('d35-to
 </script>
 
 <div id="cf-timeline-modal" class="cf-timeline-modal" role="dialog" aria-modal="true" aria-label="Edit planned money" onclick="if(event.target===this)cfTimelineCloseEdit()"><div class="cf-timeline-dialog"><div id="cf-timeline-editor"></div></div></div>
+<script id="cf-savings-controller">
+/* Savings plans use the existing Supabase goals table: planned allocation, not a bank transfer. */
+const cfSavingsMoney=n=>fmt(Number(n)||0,'USD');
+function cfSavingsDate(days){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+days);return dayStr(d);}
+function cfSavingsSection(){
+ const valid=GOALS.filter(g=>g&&Number.isFinite(Number(g.targetAmount))&&Number(g.targetAmount)>0);
+ const totalSaved=valid.reduce((a,g)=>a+Math.max(0,Number(g.currentAmount)||0),0);
+ const goalCards=valid.map(g=>{
+  const target=Number(g.targetAmount),saved=Math.max(0,Number(g.currentAmount)||0),remaining=Math.max(0,target-saved),pct=Math.min(100,Math.round(saved/target*100));
+  const date=g.deadline?new Date(g.deadline+'T12:00:00'):null;
+  const days=date?Math.max(0,Math.ceil((date-new Date())/86400000)):null;
+  const weekly=days!==null&&days>0?remaining/days*7:null;
+  const timeLabel=!date?'No deadline':days===0?(remaining===0?'Goal complete or due today':'Deadline reached'):date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  return `<div class="cf-save-card"><div class="cf-save-details"><span>YOUR SAVINGS GOAL</span><span>${esc(timeLabel)}</span></div><h3>${esc(g.name)}</h3><div class="cash-summary">${cfSavingsMoney(saved)} <span style="font-size:12px;font-weight:500;color:var(--text-3)">/ ${cfSavingsMoney(target)}</span></div><div class="cf-save-track" role="progressbar" aria-label="${esc(g.name)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="cf-save-fill" style="width:${pct}%"></div></div><div class="cf-save-details"><span>${pct}% saved · ${cfSavingsMoney(remaining)} left</span><span>${weekly!==null?`${cfSavingsMoney(weekly)} / week needed`:remaining<=0?'Target reached':days===0?'Adjust your deadline':'No deadline selected'}</span></div><div class="cf-save-buttons"><button type="button" onclick='cfSavingsOpen("deposit",${JSON.stringify(String(g.id))})'>+ Add savings</button><button type="button" onclick='cfSavingsOpen("edit",${JSON.stringify(String(g.id))})'>Edit goal</button></div></div>`;
+ }).join('');
+ return `<section class="cf-smart-card" aria-label="Savings goals" style="margin-bottom:17px"><div class="cf-save-heading"><div><span class="cf-smart-eyebrow">SAVINGS PLAN</span><h2 style="margin-top:5px">Save toward what matters</h2><p class="body-sm" style="margin-top:5px">Set a goal for 30 days, 90 days, one year, or choose your date. Track progress as you set money aside.</p></div><button class="cf-tl-add" type="button" onclick="cfSavingsOpen('new')">${icon('plus')} New savings goal</button></div><div class="cf-save-details" style="margin-top:12px"><span>${valid.length} active goal${valid.length===1?'':'s'}</span><strong>${cfSavingsMoney(totalSaved)} tracked as saved</strong></div>${goalCards?`<div class="cf-save-grid">${goalCards}</div>`:'<div class="cf-save-empty">No savings goals yet. Start with a target amount and choose 30 days, 90 days, or one year to see how much you need to save each week.</div>'}<p class="cf-vision-note">Savings progress is tracked manually. It does not move money or create income/expense transactions. Do not count these savings again as spending when estimating available cash.</p></section>`;
+}
+function cfSavingsOpen(mode,id=null){
+ const g=id?GOALS.find(x=>String(x.id)===String(id)):null;if(id&&!g)return;
+ const dlg=document.getElementById('cf-save-dialog');dlg.dataset.mode=mode;dlg.dataset.id=id||'';
+ let title=mode==='new'?'Create a savings goal':mode==='edit'?'Edit savings goal':'Add to savings';
+ let fields='';
+ if(mode==='deposit')fields=`<p class="body-sm">${esc(g.name)}: ${cfSavingsMoney(g.currentAmount)} saved toward ${cfSavingsMoney(g.targetAmount)}.</p><label>Amount to add (USD)<input class="input" id="cf-save-contribution" type="number" min="0.01" step="0.01" max="999999999.99" required placeholder="100.00"></label><p class="caption">Only updates goal progress. Record an actual bank transfer separately if needed.</p>`;
+ else fields=`<label>Goal name<input class="input" id="cf-save-name" maxlength="120" required placeholder="Emergency fund, Vacation, New car..." value="${esc(g?.name||'')}"></label><label>Savings target (USD)<input class="input" id="cf-save-target" type="number" min="0.01" step="0.01" max="999999999.99" value="${g?Number(g.targetAmount):''}" required placeholder="5000.00"></label><label>Choose timeframe</label><div class="cf-save-presets"><button type="button" onclick="cfSavingsPreset(30,this)">30 days</button><button type="button" onclick="cfSavingsPreset(90,this)">90 days</button><button type="button" onclick="cfSavingsPreset(365,this)">1 year</button></div><label>Target date<input class="input" id="cf-save-deadline" type="date" required value="${esc(g?.deadline||cfSavingsDate(90))}"></label><p class="caption">The weekly amount needed will update as you record savings.</p>`;
+ dlg.innerHTML=`<div class="cf-save-heading"><h2>${title}</h2><button class="icon-btn" type="button" aria-label="Close" onclick="cfSavingsClose()">${icon('x')}</button></div><form class="cf-save-form" onsubmit="cfSavingsSave(event)">${fields}<div class="cf-save-error" id="cf-save-error" role="alert"></div><div class="cf-save-actions"><button type="button" onclick="cfSavingsClose()">Cancel</button><button id="cf-save-submit" class="primary" type="submit">${mode==='deposit'?'Record savings':mode==='new'?'Create goal':'Save changes'}</button></div></form>`;
+ document.getElementById('cf-save-modal').classList.add('open');refreshIcons();
+}
+function cfSavingsClose(){document.getElementById('cf-save-modal').classList.remove('open');}
+function cfSavingsPreset(days,button){document.getElementById('cf-save-deadline').value=cfSavingsDate(days);document.querySelectorAll('.cf-save-presets button').forEach(b=>b.classList.toggle('active',b===button));}
+async function cfSavingsSave(event){
+ event.preventDefault();const dlg=document.getElementById('cf-save-dialog'),mode=dlg.dataset.mode,id=dlg.dataset.id,btn=document.getElementById('cf-save-submit'),err=document.getElementById('cf-save-error');
+ const g=id?GOALS.find(x=>String(x.id)===id):null;
+ if(mode!=='new'&&!g){err.textContent='Goal not found. Reload your data.';return;}
+ btn.disabled=true;btn.textContent='Saving...';err.textContent='';
+ try{
+  const uid=await getUserId();if(!uid)throw Error('Please sign in to save.');
+  if(mode==='deposit'){
+   const delta=Number(document.getElementById('cf-save-contribution').value);
+   if(!Number.isFinite(delta)||delta<=0||delta>999999999.99)throw Error('Enter a valid positive savings amount.');
+   const amount=Math.round((Number(g.currentAmount||0)+delta)*100)/100;
+   if(amount>999999999.99)throw Error('Savings total is too large.');
+   const {data,error}=await sb.from('goals').update({current_amount:amount}).eq('id',id).eq('user_id',uid).select().single();
+   if(error)throw error;Object.assign(g,mapGoal(data));
+  }else{
+   const name=document.getElementById('cf-save-name').value.trim(),target=Number(document.getElementById('cf-save-target').value),deadline=document.getElementById('cf-save-deadline').value;
+   if(!name||!Number.isFinite(target)||target<=0||target>999999999.99||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(deadline)||Number.isNaN(new Date(deadline+'T12:00:00').getTime()))throw Error('Enter a goal name, positive target, and valid date.');
+   if(mode==='new'){
+    const {data,error}=await sb.from('goals').insert({user_id:uid,name,target_amount:target,current_amount:0,deadline,color:'#818cf8'}).select().single();
+    if(error)throw error;GOALS.push(mapGoal(data));
+   }else{
+    const {data,error}=await sb.from('goals').update({name,target_amount:target,deadline}).eq('id',id).eq('user_id',uid).select().single();
+    if(error)throw error;Object.assign(g,mapGoal(data));
+   }
+  }
+  cfSavingsClose();renderMain();if(typeof cfToast==='function')cfToast('Savings goal saved');
+ }catch(e){err.textContent='Could not save: '+(e.message||String(e));}finally{btn.disabled=false;btn.textContent=mode==='deposit'?'Record savings':'Save goal';}
+}
+</script>
+<div id="cf-save-modal" class="cf-save-modal" role="dialog" aria-label="Savings goal" aria-modal="true" onclick="if(event.target===this)cfSavingsClose()"><div class="cf-save-dialog" id="cf-save-dialog"></div></div>
+
 </body>
 </html>
