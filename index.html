@@ -549,7 +549,6 @@ button:disabled{cursor:not-allowed;opacity:.57}
     <div class="hdr-actions">
       <button class="icon-btn" onclick="toggleSearch()"><svg data-lucide="search"></svg></button>
       <button class="icon-btn" onclick="openSplitwiseHub()" title="Splitwise"><svg data-lucide="users-round"></svg></button>
-      <button class="icon-btn" type="button" title="Personalize CashFlow" aria-label="Personalize CashFlow" onclick="cfOpenOnboarding(false)"><svg data-lucide="sliders-horizontal"></svg></button>
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()"><svg data-lucide="moon"></svg></button>
       <button class="icon-btn" onclick="handleSignOut()" title="Sign out"><svg data-lucide="log-out"></svg></button>
       <button class="add-btn-desktop" onclick="openModal()"><svg data-lucide="plus" style="width:13px;height:13px"></svg> Add</button>
@@ -590,7 +589,6 @@ button:disabled{cursor:not-allowed;opacity:.57}
 </div>
 
 <main id="main-content" tabindex="-1"></main>
-<div class="cf-onboard-layer" id="cf-onboard-layer" role="presentation"><section class="cf-onboard-dialog" role="dialog" aria-modal="true" aria-labelledby="cf-onboard-heading"><div id="cf-onboard-content"></div></section></div>
 <div id="cf-toast" class="cf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Add Transaction Modal -->
@@ -3890,44 +3888,6 @@ function showAuthScreen() { document.getElementById("auth-screen").style.display
 function hideAuthScreen() { document.getElementById("auth-screen").style.display = "none"; }
 
 
-/* CashFlow account-specific onboarding. All existing features remain accessible. */
-const CF_PROFILES=[['student','Student','graduation-cap'],['employee','Salaried employee','briefcase-business'],['hourly','Hourly worker','clock-3'],['freelancer','Freelancer / business owner','laptop'],['family','Household / family','users'],['other','Personal finance','wallet']];
-const CF_FEATURES=[['expenses','Income & expenses','arrow-left-right','story'],['budget','Budgets & bills','piggy-bank','story'],['insights','Financial insights','sparkles','ask'],['work','Work & paychecks','clock-3','work'],['clients','Client payments','users','people'],['calendar','Calendar','calendar-days','calendar'],['reports','Reports & exports','download','tools']];
-const CF_DEFAULT_FEATURES=['expenses','budget','insights','work','clients'];
-let cfOnboardingDraft=null;
-let cfOnboardingPromptedUser=null;
-function cfOnboardingKey(){return _cachedUserId?'cf_onboarding_v1_'+_cachedUserId:null;}
-function cfReadOnboarding(){const k=cfOnboardingKey();if(!k)return null;try{const raw=localStorage.getItem(k);if(!raw)return null;const p=JSON.parse(raw);if(!p||!Array.isArray(p.features))return null;return {profile:p.profile||'employee',features:p.features.filter(f=>CF_FEATURES.some(x=>x[0]===f)),completed:!!p.completed};}catch(e){return null;}}
-function cfOpenOnboarding(firstRun=false){
- if(!_cachedUserId)return;
- const saved=cfReadOnboarding();cfOnboardingDraft={profile:saved?.profile||'employee',features:[...(saved?.features||CF_DEFAULT_FEATURES)],firstRun:!!firstRun};
- const layer=document.getElementById('cf-onboard-layer');layer.classList.add('open');cfRenderOnboarding();
-}
-function cfRenderOnboarding(){
- const p=cfOnboardingDraft;if(!p)return;
- document.getElementById('cf-onboard-content').innerHTML=`<div class="cf-onboard-top"><span class="cf-onboard-kicker">Your CashFlow experience</span>${p.firstRun?'':`<button class="icon-btn" type="button" aria-label="Close personalization" onclick="cfCloseOnboarding()">${icon('x')}</button>`}</div>
- <h2 class="cf-onboard-title" id="cf-onboard-heading">Make CashFlow yours.</h2>
- <p class="cf-onboard-desc">Pick a starting point and the tools that matter most. You can change this anytime; all existing features and records stay available.</p>
- <p class="cf-onboard-step">01 / What best describes you?</p>
- <div class="cf-profile-options">${CF_PROFILES.map(([id,name,ico])=>`<button type="button" class="cf-profile-choice ${p.profile===id?'selected':''}" aria-pressed="${p.profile===id}" onclick="cfChooseProfile('${id}')">${icon(ico)} ${name}</button>`).join('')}</div>
- <p class="cf-onboard-step">02 / What would you like on your home screen?</p>
- <div class="cf-feature-grid">${CF_FEATURES.map(([id,label,ico])=>`<label class="cf-feature-choice ${p.features.includes(id)?'selected':''}"><input type="checkbox" ${p.features.includes(id)?'checked':''} onchange="cfToggleFeature('${id}',this.checked)">${icon(ico)}<span>${label}</span></label>`).join('')}</div>
- <div class="cf-onboard-foot"><p class="cf-onboard-note">Preferences are saved on this device for your signed-in CashFlow account. Financial data remains in your existing Supabase tables.</p><button class="btn-primary" type="button" onclick="cfSaveOnboarding()">${p.firstRun?'Create my workspace':'Save preferences'} ${icon('arrow-right')}</button></div>`;
- refreshIcons();
-}
-function cfChooseProfile(id){if(!CF_PROFILES.some(x=>x[0]===id))return;cfOnboardingDraft.profile=id;cfRenderOnboarding();}
-function cfToggleFeature(id,checked){if(!CF_FEATURES.some(x=>x[0]===id))return;const f=new Set(cfOnboardingDraft.features);if(checked)f.add(id);else f.delete(id);cfOnboardingDraft.features=[...f];cfRenderOnboarding();}
-function cfCloseOnboarding(){const p=cfOnboardingDraft;if(p?.firstRun)return;document.getElementById('cf-onboard-layer').classList.remove('open');cfOnboardingDraft=null;}
-function cfSaveOnboarding(){const key=cfOnboardingKey();if(!key||!cfOnboardingDraft)return;try{localStorage.setItem(key,JSON.stringify({profile:cfOnboardingDraft.profile,features:cfOnboardingDraft.features,completed:true,updatedAt:new Date().toISOString()}));}catch(e){alert('This browser blocked saving preferences. Please allow site storage and retry.');return;}document.getElementById('cf-onboard-layer').classList.remove('open');cfOnboardingDraft=null;state.tab='story';document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='story'));renderMain();}
-function cfPersonalPanel(){
- const p=cfReadOnboarding();if(!p?.completed)return '';
- const profile=CF_PROFILES.find(x=>x[0]===p.profile)?.[1]||'Personal finance';
- const selected=CF_FEATURES.filter(f=>p.features.includes(f[0]));
- return `<section class="cf-personal-panel" aria-label="Personalized shortcuts"><div class="cf-personal-head"><div><div class="cf-onboard-kicker">MY CASHFLOW</div><h3>Your workspace</h3><p>${esc(profile)} · Your chosen tools, one tap away</p></div><button class="cf-personal-personalize" onclick="cfOpenOnboarding(false)">${icon('sliders-horizontal')} Customize</button></div><div class="cf-personal-links">${selected.length?selected.map(([id,label,ico,tab])=>`<button class="cf-personal-link" type="button" onclick="cfGoFeature('${id}','${tab}')">${icon(ico)}<span>${esc(label)}</span>${icon('arrow-up-right')}</button>`).join(''):`<p class="body-sm">Choose a few favorite tools using Customize.</p>`}</div></section>`;
-}
-function cfGoFeature(id,tab){if(id==='budget'){state.mTab='budgets';}switchTab(tab);}
-function cfMaybeOnboard(){if(!_cachedUserId)return;const p=cfReadOnboarding();if(p?.completed)return;if(cfOnboardingPromptedUser===_cachedUserId)return;cfOnboardingPromptedUser=_cachedUserId;cfOpenOnboarding(true);}
-
 let cfBootSerial=0;
 async function bootApp() {
   const cfBootId=++cfBootSerial;
@@ -3951,7 +3911,6 @@ async function bootApp() {
   }
   renderMain();
   refreshIcons();
-  cfMaybeOnboard();
 }
 
 async function startApp() {
@@ -3973,7 +3932,6 @@ async function startApp() {
       document.getElementById("main-content").innerHTML = "";
       TXS = []; BUDGETS = []; GOALS = []; BILLS = []; RECURRING = [];
       CLIENT_WORK = []; dhootWork = []; dhootRates = []; dhootClock = null; dhootWorkError = ""; clientLedgerError = ""; cf21LoadWarnings=[]; _cachedUserId = null;
-      cfOnboardingDraft=null;cfOnboardingPromptedUser=null;document.getElementById("cf-onboard-layer").classList.remove("open");
       CHAT_MSGS = [{role:'assistant',html:'Welcome to CashFlow. Sign in to view your private chat history.'}];
     }
   });
